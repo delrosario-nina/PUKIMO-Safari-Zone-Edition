@@ -3,135 +3,88 @@ package evaluator
 import lexer.*
 import parser.*
 
-/**
- * RuntimeError - Exception thrown when evaluation fails
- * Made public so it can be caught in Main.kt
- */
-class RuntimeError(val token: Token, message: String) : RuntimeException(message)
 
-/**
- * Evaluator - Traverses the AST and computes values
- * Uses the Visitor pattern to evaluate different node types
- */
-class Evaluator {
+class RuntimeError(
+    val token: Token,
+    errorMessage: String
+) : RuntimeException("[line ${token.lineNumber}] Runtime error: $errorMessage")
 
-    /**
-     * Main entry point - evaluates a program or expression
-     */
+class Evaluator : AstVisitor<Any?> {
     fun evaluate(node: AstNode): Any? {
-        return when (node) {
-            is Program -> evaluateProgram(node)
-            is Stmt -> evaluateStatement(node)
-            is Expr -> evaluateExpression(node)
-            else -> throw RuntimeError(
-                Token(TokenType.EOF, "", null, 0),
-                "Unknown AST node type"
-            )
-        }
-    }
-
-    // ----------------------
-    // PROGRAM EVALUATION
-    // ----------------------
-
-    private fun evaluateProgram(program: Program): Any? {
+        return node.accept(this)
+}
+    override fun visitProgram(program: Program): Any? {
         var lastValue: Any? = null
         for (stmt in program.stmtList) {
-            lastValue = evaluateStatement(stmt)
+            lastValue = stmt.accept(this)
         }
         return lastValue
     }
 
-    // ----------------------
-    // STATEMENT EVALUATION
-    // ----------------------
-
-    private fun evaluateStatement(stmt: Stmt): Any? {
-        return when (stmt) {
-            is ExprStmt -> evaluateExpression(stmt.expression)
-            is PrintStmt -> evaluatePrintStmt(stmt)
-            is VarDeclStmt -> evaluateVarDeclStmt(stmt)
-            is Block -> evaluateBlock(stmt)
-            is IfStmt -> evaluateIfStmt(stmt)
-            is DefineStmt -> evaluateDefineStmt(stmt)
-            is ExploreStmt -> evaluateExploreStmt(stmt)
-            is ThrowBallStmt -> evaluateThrowBallStmt(stmt)
-            is RunStmt -> evaluateRunStmt(stmt)
-        }
+    override fun visitExprStmt(stmt: ExprStmt): Any? {
+        return stmt.expression.accept(this)
     }
 
-    private fun evaluatePrintStmt(stmt: PrintStmt): Any? {
-        val value = evaluateExpression(stmt.expression)
+    override fun visitPrintStmt(stmt: PrintStmt): Any? {
+        val value = stmt.expression.accept(this)
         println(stringify(value))
         return null
     }
 
-    private fun evaluateVarDeclStmt(stmt: VarDeclStmt): Any? {
-        val value = evaluateExpression(stmt.expression)
+    override fun visitVarDeclStmt(stmt: VarDeclStmt): Any? {
+        val value = stmt.expression.accept(this)
         // In a real interpreter, you'd store this in an environment/symbol table
         // For now, just return the value
         return value
     }
 
-    private fun evaluateBlock(block: Block): Any? {
+    override fun visitBlock(block: Block): Any? {
         var lastValue: Any? = null
         for (stmt in block.stmtList) {
-            lastValue = evaluateStatement(stmt)
+            lastValue = stmt.accept(this)
         }
         return lastValue
     }
 
-    private fun evaluateIfStmt(stmt: IfStmt): Any? {
-        val condition = evaluateExpression(stmt.expression)
+    override fun visitIfStmt(stmt: IfStmt): Any? {
+        val condition = stmt.expression.accept(this)
 
         return if (isTruthy(condition)) {
-            evaluateBlock(stmt.thenBlock)
+            stmt.thenBlock.accept(this)
         } else if (stmt.elseBlock != null) {
-            evaluateBlock(stmt.elseBlock)
+            stmt.elseBlock.accept(this)
         } else {
             null
         }
     }
 
-    private fun evaluateDefineStmt(stmt: DefineStmt): Any? {
+    override fun visitDefineStmt(stmt: DefineStmt): Any? {
         // In a real interpreter, you'd create a function object and store it
         // For now, just acknowledge it
         return null
     }
 
-    private fun evaluateExploreStmt(stmt: ExploreStmt): Any? {
+    override fun visitExploreStmt(stmt: ExploreStmt): Any? {
         // Evaluate the target
-        evaluateExpression(stmt.target)
+        stmt.target.accept(this)
         // Execute the block
-        return evaluateBlock(stmt.block)
+        return stmt.block.accept(this)
     }
 
-    private fun evaluateThrowBallStmt(stmt: ThrowBallStmt): Any? {
-        return evaluateExpression(stmt.expression)
+    override fun visitThrowBallStmt(stmt: ThrowBallStmt): Any? {
+        return stmt.expression.accept(this)
     }
 
-    private fun evaluateRunStmt(stmt: RunStmt): Any? {
+    override fun visitRunStmt(stmt: RunStmt): Any? {
         // In a real interpreter, this would continue a loop
         return null
     }
 
-    // ----------------------
-    // EXPRESSION EVALUATION
-    // ----------------------
-
-    private fun evaluateExpression(expr: Expr): Any? {
-        return when (expr) {
-            is LiteralExpr -> expr.value
-            is VariableExpr -> evaluateVariableExpr(expr)
-            is UnaryExpr -> evaluateUnaryExpr(expr)
-            is BinaryExpr -> evaluateBinaryExpr(expr)
-            is AssignExpr -> evaluateAssignExpr(expr)
-            is CallExpr -> evaluateCallExpr(expr)
-            is PropertyAccessExpr -> evaluatePropertyAccessExpr(expr)
-        }
+    override fun visitLiteralExpr(expr: LiteralExpr): Any? {
+        return expr.value
     }
 
-    private fun evaluateVariableExpr(expr: VariableExpr): Any? {
+    override fun visitVariableExpr(expr: VariableExpr): Any? {
         // In a real interpreter, look up the variable in the environment
         // For now, throw an error
         throw RuntimeError(
@@ -140,8 +93,8 @@ class Evaluator {
         )
     }
 
-    private fun evaluateUnaryExpr(expr: UnaryExpr): Any? {
-        val right = evaluateExpression(expr.right)
+    override fun visitUnaryExpr(expr: UnaryExpr): Any? {
+        val right = expr.right.accept(this)
 
         return when (expr.operator.type) {
             TokenType.MINUS -> {
@@ -160,9 +113,9 @@ class Evaluator {
         }
     }
 
-    private fun evaluateBinaryExpr(expr: BinaryExpr): Any? {
-        val left = evaluateExpression(expr.left)
-        val right = evaluateExpression(expr.right)
+    override fun visitBinaryExpr(expr: BinaryExpr): Any? {
+        val left = expr.left.accept(this)
+        val right = expr.right.accept(this)
 
         return when (expr.operator.type) {
             // Arithmetic operators
@@ -278,14 +231,14 @@ class Evaluator {
         }
     }
 
-    private fun evaluateAssignExpr(expr: AssignExpr): Any? {
-        val value = evaluateExpression(expr.value)
+    override fun visitAssignExpr(expr: AssignExpr): Any? {
+        val value = expr.value.accept(this)
         // In a real interpreter, store the value in the environment
         // For now, just return it
         return value
     }
 
-    private fun evaluateCallExpr(expr: CallExpr): Any? {
+    override fun visitCallExpr(expr: CallExpr): Any? {
         // In a real interpreter, evaluate the callee and arguments
         // then invoke the function
         throw RuntimeError(
@@ -294,7 +247,7 @@ class Evaluator {
         )
     }
 
-    private fun evaluatePropertyAccessExpr(expr: PropertyAccessExpr): Any? {
+    override fun visitPropertyAccessExpr(expr: PropertyAccessExpr): Any? {
         // In a real interpreter, evaluate the object and access its property
         throw RuntimeError(
             expr.identifier,

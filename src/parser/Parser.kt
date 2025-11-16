@@ -2,52 +2,23 @@ package parser
 
 import lexer.*
 
-sealed class AstNode
-
-data class Program(val stmtList: List<Stmt>) : AstNode()
-
-// ----------------------
-// STATEMENTS
-// ----------------------
-sealed class Stmt : AstNode()
-
-data class IfStmt(val expression: Expr, val thenBlock: Block, val elseBlock: Block?) : Stmt()
-data class VarDeclStmt(val identifier: Token, val expression: Expr) : Stmt()
-data class ExprStmt(val expression: Expr) : Stmt()
-data class PrintStmt(val expression: Expr) : Stmt()
-data class Block(val stmtList: List<Stmt>) : Stmt()
-data class RunStmt(val token: Token) : Stmt()
-data class ExploreStmt(val target: Expr, val block: Block) : Stmt()
-data class DefineStmt(val name: Token, val paramList: List<Token>, val block: Block) : Stmt()
-data class ThrowBallStmt(val expression: Expr) : Stmt()
-
-// ----------------------
-// EXPRESSIONS
-// ----------------------
-sealed class Expr : AstNode()
-data class BinaryExpr(val left: Expr, val operator: Token, val right: Expr) : Expr()
-data class UnaryExpr(val operator: Token, val right: Expr) : Expr()
-data class LiteralExpr(val value: Any?) : Expr()
-data class VariableExpr(val identifier: Token) : Expr()
-data class AssignExpr(val target: Expr, val equals: Token, val value: Expr) : Expr()
-data class CallExpr(val callee: Expr, val args: List<Expr>) : Expr()
-data class PropertyAccessExpr(val primaryWithSuffixes: Expr, val identifier: Token) : Expr()
-
 // ----------------------
 // PARSER CLASS
 // ----------------------
-class Parser(private val tokens: List<Token>) {
-    private var current = 0
-    private var inControlBlock = 0
-
+class Parser(
+    private val tokens: List<Token>,
+    private val tokenBuffer: TokenBuffer = TokenBuffer(tokens),
+    private val context: ParsingContext = ParsingContext(),
+    private val errorHandler: ErrorHandler = ErrorHandler()
+) {
     // ----------------------
     // ENTRY POINT
     // ----------------------
     fun parse(): Program {
         val stmtList = mutableListOf<Stmt>()
-        while (!isAtEnd()) {
+        while (!tokenBuffer.isAtEnd()) {
             stmtList.add(
-                if (check(TokenType.IF_KEYWORD)) parseIfStmt()
+                if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
                 else parseNonIfStmt()
             )
         }
@@ -59,13 +30,13 @@ class Parser(private val tokens: List<Token>) {
     // ----------------------
     private fun parseNonIfStmt(): Stmt {
         return when {
-            check(TokenType.IDENTIFIER) && peekNext().type == TokenType.ASSIGN -> parseVarDeclStmt()
-            match(TokenType.PRINT_KEYWORD) -> parsePrintStmt()
-            check(TokenType.RUN_KEYWORD) -> parseRunStmt()
-            match(TokenType.EXPLORE_KEYWORD) -> parseExploreStmt()
-            check(TokenType.THROWBALL_KEYWORD) -> parseThrowBallStmt()
-            check(TokenType.DEFINE_KEYWORD) -> parseDefineStmt()
-            match(TokenType.LEFT_BRACE) -> parseBlock()
+            tokenBuffer.check(TokenType.IDENTIFIER) && tokenBuffer.peekNext().type == TokenType.ASSIGN -> parseVarDeclStmt()
+            tokenBuffer.match(TokenType.PRINT_KEYWORD) -> parsePrintStmt()
+            tokenBuffer.check(TokenType.RUN_KEYWORD) -> parseRunStmt()
+            tokenBuffer.match(TokenType.EXPLORE_KEYWORD) -> parseExploreStmt()
+            tokenBuffer.check(TokenType.THROWBALL_KEYWORD) -> parseThrowBallStmt()
+            tokenBuffer.check(TokenType.DEFINE_KEYWORD) -> parseDefineStmt()
+            tokenBuffer.match(TokenType.LEFT_BRACE) -> parseBlock()
             else -> parseExprStmt(optionalSemicolon = true)
         }
     }
@@ -76,15 +47,15 @@ class Parser(private val tokens: List<Token>) {
         val condition = parseExpression()
         consume(TokenType.RIGHT_PAREN, "Expected ')' after if condition")
 
-        inControlBlock++
-        val thenBlock = if (check(TokenType.LEFT_BRACE)) parseBlock()
-        else throw error(peek(), "Expected '{' to start 'if' block.")
+        context.enterControlBlock()
+        val thenBlock = if (tokenBuffer.check(TokenType.LEFT_BRACE)) parseBlock()
+        else throw errorHandler.error(tokenBuffer.peek(), "Expected '{' to start 'if' block.")
 
-        val elseBlock = if (match(TokenType.ELSE_KEYWORD)) {
-            if (check(TokenType.LEFT_BRACE)) parseBlock()
-            else throw error(peek(), "Expected '{' to start 'else' block.")
+        val elseBlock = if (tokenBuffer.match(TokenType.ELSE_KEYWORD)) {
+            if (tokenBuffer.check(TokenType.LEFT_BRACE)) parseBlock()
+            else throw errorHandler.error(tokenBuffer.peek(), "Expected '{' to start 'else' block.")
         } else null
-        inControlBlock--
+        context.exitControlBlock()
 
         return IfStmt(condition, thenBlock, elseBlock)
     }
@@ -101,10 +72,10 @@ class Parser(private val tokens: List<Token>) {
         consume(TokenType.DEFINE_KEYWORD, "Expected 'define' keyword")
         val name = consume(TokenType.IDENTIFIER, "Expected function name after 'define'")
         val params = mutableListOf<Token>()
-        if (match(TokenType.LEFT_PAREN)) {
-            if (!check(TokenType.RIGHT_PAREN)) {
+        if (tokenBuffer.match(TokenType.LEFT_PAREN)) {
+            if (!tokenBuffer.check(TokenType.RIGHT_PAREN)) {
                 do { params.add(consume(TokenType.IDENTIFIER, "Expected parameter name")) }
-                while (match(TokenType.COMMA))
+                while (tokenBuffer.match(TokenType.COMMA))
             }
             consume(TokenType.RIGHT_PAREN, "Expected ')' after function parameters")
         }
@@ -131,35 +102,40 @@ class Parser(private val tokens: List<Token>) {
 
     private fun parseExprStmt(optionalSemicolon: Boolean = false): Stmt {
         val expr = parseExpression()
-        if (!optionalSemicolon || check(TokenType.SEMICOLON)) {
+        if (!optionalSemicolon || tokenBuffer.check(TokenType.SEMICOLON)) {
             consume(TokenType.SEMICOLON, "Expected ';' after expression.")
         }
-        if (expr is VariableExpr) throw error(expr.identifier, "Unexpected standalone identifier '${expr.identifier.lexeme}'.")
+        if (expr is VariableExpr) throw errorHandler.error(expr.identifier, "Unexpected standalone identifier '${expr.identifier.lexeme}'.")
         return ExprStmt(expr)
     }
 
     private fun parseBlock(): Block {
         consume(TokenType.LEFT_BRACE, "Expected '{' at start of block")
         val stmts = mutableListOf<Stmt>()
-        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
-            stmts.add(parseNonIfStmt())
+        while (!tokenBuffer.check(TokenType.RIGHT_BRACE) && !tokenBuffer.isAtEnd()) {
+            // Allow both if and non-if statements inside blocks
+            stmts.add(
+                if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
+                else parseNonIfStmt()
+            )
         }
         consume(TokenType.RIGHT_BRACE, "Expected '}' after block")
         return Block(stmts)
     }
 
+
     private fun parseRunStmt(): Stmt {
         val runToken = consume(TokenType.RUN_KEYWORD, "Expected 'run' keyword")
-        if (inControlBlock == 0) throw error(runToken, "'run' can only be used inside a control block")
+        context.validateRunStatement(runToken)
         consume(TokenType.SEMICOLON, "Expected ';' after 'run' statement.")
         return RunStmt(runToken)
     }
 
     private fun parseExploreStmt(): Stmt {
         val target = parseExpression()
-        inControlBlock++
+        context.enterControlBlock()
         val block = parseBlock()
-        inControlBlock--
+        context.exitControlBlock()
         return ExploreStmt(target, block)
     }
 
@@ -170,53 +146,53 @@ class Parser(private val tokens: List<Token>) {
 
     private fun parseAssignExpr(): Expr {
         val expr = parseOr()
-        if (match(TokenType.ASSIGN)) {
-            val equals = previous()
+        if (tokenBuffer.match(TokenType.ASSIGN)) {
+            val equals = tokenBuffer.previous()
             val value = parseAssignExpr()
             if (expr is VariableExpr || expr is PropertyAccessExpr) return AssignExpr(expr, equals, value)
-            else throw error(equals, "Invalid assignment target.")
+            else throw errorHandler.error(equals, "Invalid assignment target.")
         }
         return expr
     }
 
     private fun parseOr(): Expr {
         var expr = parseAnd()
-        while (match(TokenType.OR)) expr = BinaryExpr(expr, previous(), parseAnd())
+        while (tokenBuffer.match(TokenType.OR)) expr = BinaryExpr(expr, tokenBuffer.previous(), parseAnd())
         return expr
     }
 
     private fun parseAnd(): Expr {
         var expr = parseEquality()
-        while (match(TokenType.AND)) expr = BinaryExpr(expr, previous(), parseEquality())
+        while (tokenBuffer.match(TokenType.AND)) expr = BinaryExpr(expr, tokenBuffer.previous(), parseEquality())
         return expr
     }
 
     private fun parseEquality(): Expr {
         var expr = parseRelational()
-        while (match(TokenType.EQUAL_EQUAL, TokenType.NOT_EQUAL)) expr = BinaryExpr(expr, previous(), parseRelational())
+        while (tokenBuffer.match(TokenType.EQUAL_EQUAL, TokenType.NOT_EQUAL)) expr = BinaryExpr(expr, tokenBuffer.previous(), parseRelational())
         return expr
     }
 
     private fun parseRelational(): Expr {
         var expr = parseAdditive()
-        while (match(TokenType.LESS_THAN, TokenType.LESS_EQUAL, TokenType.GREATER_THAN, TokenType.GREATER_EQUAL)) expr = BinaryExpr(expr, previous(), parseAdditive())
+        while (tokenBuffer.match(TokenType.LESS_THAN, TokenType.LESS_EQUAL, TokenType.GREATER_THAN, TokenType.GREATER_EQUAL)) expr = BinaryExpr(expr, tokenBuffer.previous(), parseAdditive())
         return expr
     }
 
     private fun parseAdditive(): Expr {
         var expr = parseMultiplicative()
-        while (match(TokenType.PLUS, TokenType.MINUS)) expr = BinaryExpr(expr, previous(), parseMultiplicative())
+        while (tokenBuffer.match(TokenType.PLUS, TokenType.MINUS)) expr = BinaryExpr(expr, tokenBuffer.previous(), parseMultiplicative())
         return expr
     }
 
     private fun parseMultiplicative(): Expr {
         var expr = parseUnary()
-        while (match(TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULO)) expr = BinaryExpr(expr, previous(), parseUnary())
+        while (tokenBuffer.match(TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULO)) expr = BinaryExpr(expr, tokenBuffer.previous(), parseUnary())
         return expr
     }
 
     private fun parseUnary(): Expr {
-        return if (match(TokenType.NOT, TokenType.MINUS)) UnaryExpr(previous(), parseUnary())
+        return if (tokenBuffer.match(TokenType.NOT, TokenType.MINUS)) UnaryExpr(tokenBuffer.previous(), parseUnary())
         else parsePrimaryWithSuffixes()
     }
 
@@ -224,22 +200,24 @@ class Parser(private val tokens: List<Token>) {
         var expr = parsePrimary()
         while (true) {
             expr = when {
-                match(TokenType.DOT) -> {
+                tokenBuffer.match(TokenType.DOT) -> {
                     val member = consume(TokenType.IDENTIFIER, "Expected property name after '.'")
                     PropertyAccessExpr(expr, member)
                 }
 
-                match(TokenType.ARROW) -> {
+                tokenBuffer.match(TokenType.ARROW) -> {
                     val member = consume(TokenType.IDENTIFIER, "Expected method name after '->'")
-                    if (match(TokenType.LEFT_PAREN)) {
+                    if (tokenBuffer.match(TokenType.LEFT_PAREN)) {
                         val args = parseArgList()
-                        CallExpr(PropertyAccessExpr(expr, member), args)
-                    } else PropertyAccessExpr(expr, member)
+                        CallExpr(PropertyAccessExpr(expr, member), args.positional, args.named)
+                    } else {
+                        PropertyAccessExpr(expr, member)
+                    }
                 }
 
-                match(TokenType.LEFT_PAREN) -> {
+                tokenBuffer.match(TokenType.LEFT_PAREN) -> {
                     val args = parseArgList()
-                    CallExpr(expr, args)
+                    CallExpr(expr, args.positional, args.named)
                 }
 
                 else -> break
@@ -250,54 +228,58 @@ class Parser(private val tokens: List<Token>) {
 
     private fun parsePrimary(): Expr {
         return when {
-            match(TokenType.NUMERIC_LITERAL, TokenType.STRING_LITERAL, TokenType.BOOLEAN_LITERAL, TokenType.NULL_LITERAL) -> LiteralExpr(previous().literal)
-            match(TokenType.IDENTIFIER) -> VariableExpr(previous())
-            match(TokenType.SAFARI_ZONE, TokenType.TEAM) -> {
-                val token = previous()
+            tokenBuffer.match(TokenType.NUMERIC_LITERAL, TokenType.STRING_LITERAL, TokenType.BOOLEAN_LITERAL, TokenType.NULL_LITERAL) -> LiteralExpr(tokenBuffer.previous().literal)
+            tokenBuffer.match(TokenType.IDENTIFIER) -> VariableExpr(tokenBuffer.previous())
+            tokenBuffer.match(TokenType.SAFARI_ZONE, TokenType.TEAM) -> {
+                val token = tokenBuffer.previous()
                 consume(TokenType.LEFT_PAREN, "Expected '(' after ${token.lexeme}")
                 val args = parseArgList()
-                CallExpr(VariableExpr(token), args)
+                CallExpr(VariableExpr(token), args.positional, args.named)
             }
-            match(TokenType.LEFT_PAREN) -> {
+            tokenBuffer.match(TokenType.LEFT_PAREN) -> {
                 val expr = parseExpression()
                 consume(TokenType.RIGHT_PAREN, "Expected ')' after expression")
                 expr
             }
-            else -> throw error(peek(), "Expected primary expression")
+            else -> throw errorHandler.error(tokenBuffer.peek(), "Expected primary expression")
         }
     }
 
-    private fun parseArgList(): List<Expr> {
-        val args = mutableListOf<Expr>()
-        if (!check(TokenType.RIGHT_PAREN)) {
-            do args.add(parseExpression()) while (match(TokenType.COMMA))
+    private data class ArgumentList(val positional: List<Expr>, val named: List<NamedArg>)
+
+    private fun parseArgList(): ArgumentList {
+        val positional = mutableListOf<Expr>()
+        val named = mutableListOf<NamedArg>()
+
+        if (!tokenBuffer.check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (tokenBuffer.check(TokenType.IDENTIFIER)) {
+                    val nextToken = tokenBuffer.peekNext()
+
+                    if (nextToken.type == TokenType.ASSIGN) {
+                        val name = tokenBuffer.advance()
+                        consume(TokenType.ASSIGN, "Expected '=' after argument name")
+                        val value = parseExpression()
+                        named.add(NamedArg(name, value))
+                    } else {
+                        positional.add(parseExpression())
+                    }
+                } else {
+                    positional.add(parseExpression())
+                }
+            } while (tokenBuffer.match(TokenType.COMMA))
         }
         consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments")
-        return args
+        return ArgumentList(positional, named)
     }
 
-    // ----------------------
-    // UTILITY FUNCTIONS
-    // ----------------------
-    private fun match(vararg types: TokenType): Boolean {
-        for (type in types) if (check(type)) { advance(); return true }
-        return false
-    }
 
+
+    // ----------------------
+    // HELPER FUNCTIONS
+    // ----------------------
     private fun consume(type: TokenType, message: String): Token {
-        if (check(type)) return advance()
-        throw error(peek(), message)
+        if (tokenBuffer.check(type)) return tokenBuffer.advance()
+        throw errorHandler.error(tokenBuffer.peek(), message)
     }
-
-    private fun check(type: TokenType): Boolean = !isAtEnd() && peek().type == type
-    private fun advance(): Token { if (!isAtEnd()) current++; return previous() }
-    private fun isAtEnd(): Boolean = peek().type == TokenType.EOF
-    private fun peek(): Token = tokens[current]
-    private fun peekNext(): Token = tokens.getOrElse(current + 1) { tokens.last() }
-    private fun previous(): Token = tokens[current - 1]
-    private fun error(token: Token, message: String): Exception {
-        val location = if (token.type == TokenType.EOF) "end" else "'${token.lexeme}'"
-        return Exception("[line ${token.lineNumber}] Error at $location: $message")
-    }
-
 }

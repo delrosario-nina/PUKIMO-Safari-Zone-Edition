@@ -85,8 +85,7 @@ class Scanner {
             if (char == '\n') lineNumber++
 
             if (char == '\\' && index + 1 < source.length) {
-                val nextChar = source[index + 1]
-                val escaped = when (nextChar) {
+                val escaped = when (val nextChar = source[index + 1]) {
                     'n' -> '\n'
                     't' -> '\t'
                     '\\' -> '\\'
@@ -166,53 +165,6 @@ class Scanner {
             char == '"' -> scanString(source, start)
             else -> scanOperator(source, start)
         }
-    }
-
-    // --------------------
-    // Full line scanning
-    // --------------------
-    fun scanLine(source: String): List<Token> {
-        val tokens = mutableListOf<Token>()
-        var index = 0
-
-        while (index < source.length) {
-            val char = source[index]
-
-            if (char == '\n') {
-                lineNumber++
-                index++
-                continue
-            }
-
-            // Skip whitespace
-            if (char.isWhitespace()) { index++; continue }
-
-            // Single-line comment: :>
-            if (char == ':' && index + 1 < source.length && source[index + 1] == '>') break
-
-            // Multi-line comment: /* ... */
-            if (char == '/' && index + 1 < source.length && source[index + 1] == '*') {
-                index += 2
-                while (index < source.length &&
-                    !(source[index] == '*' && index + 1 < source.length && source[index + 1] == '/')) {
-                    if (source[index] == '\n') lineNumber++
-                    index++
-                }
-                if (index + 1 >= source.length)
-                    throw IllegalArgumentException("Unterminated multi-line comment at line $lineNumber")
-                index += 2
-                continue
-            }
-
-            val (token, nextIndex) = scanToken(source, index)
-            tokens.add(token)
-            index = nextIndex
-        }
-
-        if (!source.endsWith("\n")) lineNumber++
-        tokens.add(Token(TokenType.EOF, "", null, lineNumber - 1))
-
-        return tokens
     }
 
     fun scanAll(source: String): List<Token> {
