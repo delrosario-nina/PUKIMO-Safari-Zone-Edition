@@ -1,7 +1,7 @@
-package parser
-
 import lexer.Scanner
+import parser.*
 import evaluator.Evaluator
+import evaluator.RuntimeError
 import java.util.Scanner as JavaScanner
 
 fun main() {
@@ -9,9 +9,9 @@ fun main() {
     val input = JavaScanner(System.`in`)
     val buffer = mutableListOf<String>()
     var openBraces = 0
-    val printer = AstPrinter()
-    val evaluator = Evaluator()  // ✅ Add this
+    val evaluator = Evaluator()
 
+    println("Pukimo REPL - Safari Zone Edition")
     println("Enter code (type 'exit' to quit):")
 
     while (true) {
@@ -34,21 +34,25 @@ fun main() {
                 val parser = Parser(tokens)
                 val ast = parser.parse()
 
-
-                try {
-                    val result = evaluator.evaluate(ast)
-                    if (result != null) println(result)
-                } catch (e: Exception) {
-                    println("Runtime Error: ${e.message}")
+                val result = evaluator.evaluate(ast)
+                if (result != null) {
+                    println(evaluator.stringify(result))
                 }
 
+            } catch (e: RuntimeError) {
+                println(e.message)
+
+            } catch (e: ParserError) {
+                println(e.message)
 
             } catch (e: Exception) {
-                println(e.message ?: "Unknown error")
+                println("Error: ${e.message}")
             }
 
             buffer.clear()
             openBraces = 0
         }
     }
+
+    println("\nGoodbye, Trainer!")
 }

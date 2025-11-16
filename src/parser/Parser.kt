@@ -113,11 +113,16 @@ class Parser(
         consume(TokenType.LEFT_BRACE, "Expected '{' at start of block")
         val stmts = mutableListOf<Stmt>()
         while (!tokenBuffer.check(TokenType.RIGHT_BRACE) && !tokenBuffer.isAtEnd()) {
-            stmts.add(parseNonIfStmt())
+            // Allow both if and non-if statements inside blocks
+            stmts.add(
+                if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
+                else parseNonIfStmt()
+            )
         }
         consume(TokenType.RIGHT_BRACE, "Expected '}' after block")
         return Block(stmts)
     }
+
 
     private fun parseRunStmt(): Stmt {
         val runToken = consume(TokenType.RUN_KEYWORD, "Expected 'run' keyword")

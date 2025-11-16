@@ -50,6 +50,7 @@ data class BinaryExpr(val left: Expr, val operator: Token, val right: Expr) : Ex
 data class UnaryExpr(val operator: Token, val right: Expr) : Expr() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitUnaryExpr(this)
 }
+
 data class LiteralExpr(val value: Any?) : Expr() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitLiteralExpr(this)
 }
