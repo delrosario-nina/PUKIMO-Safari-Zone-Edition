@@ -1,0 +1,141 @@
+print("=== Variables and Strings Test ===");
+print("");
+
+print("--- Test 1: Variable Declaration ---");
+var num = 42;
+var text = "Hello";
+var flag = true;
+var nothing = null;
+print("num = " + num);
+print("text = " + text);
+print("flag = " + flag);
+print("nothing = " + nothing);
+print("");
+
+print("--- Test 2: Variable Reassignment ---");
+var x = 10;
+print("Initial x = " + x);
+x = 20;
+print("After x = 20: " + x);
+x = 30;
+print("After x = 30: " + x);
+x = x + 5;
+print("After x = x + 5: " + x);
+print("");
+
+print("--- Test 3: Multiple Assignments ---");
+var a = 1;
+var b = 2;
+var c = 3;
+print("a = " + a + ", b = " + b + ", c = " + c);
+a = b;
+print("After a = b: a = " + a);
+b = c;
+print("After b = c: b = " + b);
+c = a + b;
+print("After c = a + b: c = " + c);
+print("");
+
+print("--- Test 4: String Concatenation ---");
+var first = "Hello";
+var second = "World";
+var greeting = first + " " + second;
+print("first + ' ' + second = " + greeting);
+var message = "The answer is " + 42;
+print("message = " + message);
+print("");
+
+print("--- Test 5: String Concatenation with Objects ---");
+var zone = SafariZone(10, 20);
+var zoneMsg = "Zone: " + zone;
+print(zoneMsg);
+var team = Team("Ash", 6);
+var teamMsg = "Team: " + team;
+print(teamMsg);
+print("");
+
+print("--- Test 6: Number to String Concatenation ---");
+var count = 100;
+print("Count: " + count);
+print("Double: " + (count * 2));
+print("Result: " + (50 + 50));
+print("");
+
+print("--- Test 7: Boolean to String Concatenation ---");
+var isTrue = true;
+var isFalse = false;
+print("isTrue: " + isTrue);
+print("isFalse: " + isFalse);
+print("Comparison: " + (10 > 5));
+print("");
+
+print("--- Test 8: Null Handling ---");
+var empty = null;
+print("empty = " + empty);
+var notEmpty = "Something";
+print("notEmpty = " + notEmpty);
+notEmpty = null;
+print("After setting to null: " + notEmpty);
+print("");
+
+print("--- Test 9: Chain Assignments ---");
+var val1 = 5;
+var val2 = 10;
+var val3 = 15;
+print("Initial: val1=" + val1 + ", val2=" + val2 + ", val3=" + val3);
+val1 = val1 + 1;
+val2 = val2 + val1;
+val3 = val3 + val2;
+print("After chaining: val1=" + val1 + ", val2=" + val2 + ", val3=" + val3);
+print("");
+
+print("--- Test 10: Complex String Building ---");
+var name = "Pikachu";
+var level = 25;
+var type = "Electric";
+var description = name + " (Level " + level + ") - Type: " + type;
+print(description);
+print("");
+
+print("--- Test 11: Variable Shadowing (same name reuse) ---");
+var temp = "First value";
+print("temp = " + temp);
+temp = "Second value";
+print("temp = " + temp);
+temp = 123;
+print("temp = " + temp);
+temp = false;
+print("temp = " + temp);
+print("");
+
+print("--- Test 12: Arithmetic in String Context ---");
+var n1 = 10;
+var n2 = 20;
+print("n1 + n2 = " + (n1 + n2));
+print("Result: " + (n1 * n2 + 100));
+print("Complex: " + ((n1 + n2) * 2 - 5));
+print("");
+
+print("--- Test 13: Empty Strings ---");
+var empty1 = "";
+var empty2 = "";
+print("empty1 = '" + empty1 + "'");
+print("empty2 = '" + empty2 + "'");
+var combined = empty1 + empty2;
+print("combined = '" + combined + "'");
+var withText = empty1 + "Text" + empty2;
+print("withText = '" + withText + "'");
+print("");
+
+print("--- Test 14: Long String Concatenation ---");
+var part1 = "This ";
+var part2 = "is ";
+var part3 = "a ";
+var part4 = "long ";
+var part5 = "sentence.";
+var fullSentence = part1 + part2 + part3 + part4 + part5;
+print(fullSentence);
+print("");
+
+print("=== All Variable and String Tests Complete! ===");
+

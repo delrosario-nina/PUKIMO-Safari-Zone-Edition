@@ -30,3 +30,23 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Compiled Files ###
+*.class
+*.jar
+META-INF/
+
+### GitHub Copilot ###
+.copilot/
+.github/copilot/
+
+### JetBrains IDE ###
+.idea/
+*.iml
+*.iws
+*.ipr
+
+### Build Output ###
+build/
+target/
+*.log
