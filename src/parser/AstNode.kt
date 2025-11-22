@@ -40,6 +40,9 @@ data class DefineStmt(val name: Token, val paramList: List<Token>, val block: Bl
 data class ThrowBallStmt(val expression: Expr) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitThrowBallStmt(this)
 }
+data class ReturnStmt(val keyword: Token, val value: Expr?) : Stmt() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitReturnStmt(this)
+}
 
 // Expressions
 sealed class Expr: AstNode()

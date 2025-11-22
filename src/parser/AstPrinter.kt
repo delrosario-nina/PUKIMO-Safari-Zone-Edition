@@ -43,6 +43,9 @@ class AstPrinter : AstVisitor<String> {
     override fun visitThrowBallStmt(node: ThrowBallStmt): String =
         "(throwBall ${node.expression.accept(this)})"
 
+    override fun visitReturnStmt(node: ReturnStmt): String =
+        if (node.value != null) "(return ${node.value.accept(this)})" else "(return)"
+
     override fun visitBinaryExpr(node: BinaryExpr): String =
         parenthesize(node.operator.lexeme, node.left, node.right)
 

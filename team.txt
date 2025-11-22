@@ -1,0 +1,150 @@
+print("=== Team Object Test ===");
+print("");
+
+print("--- Test 1: Creating Team ---");
+var team = Team("Ash");
+print("Created: " + team);
+print("");
+
+print("--- Test 2: Check Team Properties ---");
+print("Trainer name: " + team.trainerName);
+print("Max size: " + team.maxSize);
+print("");
+
+print("--- Test 3: Adding Pokemon to Team ---");
+team.pokemon->add("Pikachu");
+print("Added Pikachu");
+team.pokemon->add("Charizard");
+print("Added Charizard");
+team.pokemon->add("Blastoise");
+print("Added Blastoise");
+print("Team roster: " + team.pokemon->list());
+print("Pokemon count: " + team.pokemon->count());
+print("");
+
+print("--- Test 4: Check Team Status ---");
+var isEmpty = team->isEmpty();
+print("Is team empty? " + isEmpty);
+var isFull = team->isFull();
+print("Is team full? " + isFull);
+print("");
+
+print("--- Test 5: Check if Pokemon Exists ---");
+var hasPikachu = team->has("Pikachu");
+print("Has Pikachu? " + hasPikachu);
+var hasMewtwo = team->has("Mewtwo");
+print("Has Mewtwo? " + hasMewtwo);
+var hasCharizard = team->has("charizard");
+print("Has charizard (case-insensitive)? " + hasCharizard);
+print("");
+
+print("--- Test 6: Finding Pokemon ---");
+var foundPika = team.pokemon->find("pikachu");
+print("Find 'pikachu': " + foundPika);
+var foundBlast = team.pokemon->find("Blastoise");
+print("Find 'Blastoise': " + foundBlast);
+var foundMew = team.pokemon->find("Mew");
+print("Find 'Mew' (not in team): " + foundMew);
+print("");
+
+print("--- Test 7: Random Pokemon from Team ---");
+var random1 = team.pokemon->random();
+print("Random Pokemon 1: " + random1);
+var random2 = team.pokemon->random();
+print("Random Pokemon 2: " + random2);
+var random3 = team.pokemon->random();
+print("Random Pokemon 3: " + random3);
+print("");
+
+print("--- Test 8: Removing Pokemon ---");
+print("Before removal: " + team.pokemon->list());
+var removed = team.pokemon->remove("Charizard");
+print("Removed Charizard: " + removed);
+print("After removal: " + team.pokemon->list());
+print("Pokemon count: " + team.pokemon->count());
+print("");
+
+print("--- Test 9: Fill Team to Maximum ---");
+print("Current size: " + team.pokemon->count() + " / " + team.maxSize);
+team.pokemon->add("Venusaur");
+print("Added Venusaur");
+team.pokemon->add("Lapras");
+print("Added Lapras");
+team.pokemon->add("Snorlax");
+print("Added Snorlax");
+team.pokemon->add("Dragonite");
+print("Added Dragonite");
+print("Team roster: " + team.pokemon->list());
+print("Pokemon count: " + team.pokemon->count());
+var fullNow = team->isFull();
+print("Is team full now? " + fullNow);
+print("");
+
+print("--- Test 10: Clear Team ---");
+print("Before clear: " + team.pokemon->list());
+team.pokemon->clear();
+print("After clear: " + team.pokemon->list());
+var emptyNow = team->isEmpty();
+print("Is team empty after clear? " + emptyNow);
+print("Pokemon count: " + team.pokemon->count());
+print("");
+
+print("--- Test 11: Custom Max Size Team ---");
+var bigTeam = Team("Gary", 10);
+print("Created big team: " + bigTeam);
+print("Trainer: " + bigTeam.trainerName);
+print("Max size: " + bigTeam.maxSize);
+bigTeam.pokemon->add("Eevee");
+bigTeam.pokemon->add("Umbreon");
+bigTeam.pokemon->add("Espeon");
+bigTeam.pokemon->add("Vaporeon");
+bigTeam.pokemon->add("Jolteon");
+bigTeam.pokemon->add("Flareon");
+bigTeam.pokemon->add("Leafeon");
+bigTeam.pokemon->add("Glaceon");
+print("Big team roster: " + bigTeam.pokemon->list());
+print("Count: " + bigTeam.pokemon->count() + " / " + bigTeam.maxSize);
+var bigTeamFull = bigTeam->isFull();
+print("Is big team full? " + bigTeamFull);
+print("");
+
+print("--- Test 12: Small Team ---");
+var smallTeam = Team("Misty", 3);
+print("Created small team: " + smallTeam);
+print("Max size: " + smallTeam.maxSize);
+smallTeam.pokemon->add("Staryu");
+smallTeam.pokemon->add("Starmie");
+smallTeam.pokemon->add("Psyduck");
+print("Small team roster: " + smallTeam.pokemon->list());
+var smallFull = smallTeam->isFull();
+print("Is small team full? " + smallFull);
+print("");
+
+print("--- Test 13: Multiple Teams ---");
+var team1 = Team("Red", 6);
+var team2 = Team("Blue", 6);
+team1.pokemon->add("Pikachu");
+team1.pokemon->add("Charizard");
+team2.pokemon->add("Blastoise");
+team2.pokemon->add("Venusaur");
+print("Team 1 (" + team1.trainerName + "): " + team1.pokemon->list());
+print("Team 2 (" + team2.trainerName + "): " + team2.pokemon->list());
+print("");
+
+print("--- Test 14: Pokemon Collection Operations ---");
+var testTeam = Team("Brock", 6);
+testTeam.pokemon->add("Onix");
+testTeam.pokemon->add("Geodude");
+testTeam.pokemon->add("Vulpix");
+print("Test team: " + testTeam.pokemon->list());
+print("Count: " + testTeam.pokemon->count());
+var testEmpty = testTeam.pokemon->isEmpty();
+print("Is empty? " + testEmpty);
+testTeam.pokemon->clear();
+print("After clear: " + testTeam.pokemon->list());
+var testEmptyNow = testTeam.pokemon->isEmpty();
+print("Is empty now? " + testEmptyNow);
+print("");
+
+print("=== All Team Tests Complete! ===");
+

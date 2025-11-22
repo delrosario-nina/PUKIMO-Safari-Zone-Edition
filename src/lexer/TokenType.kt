@@ -9,6 +9,7 @@ enum class TokenType(val symbols: Set<String>? = null) {
         EXPLORE_KEYWORD(setOf("explore")),
         RUN_KEYWORD(setOf("run")),
         DEFINE_KEYWORD(setOf("define")),
+        RETURN_KEYWORD(setOf("return")),
         PRINT_KEYWORD(setOf("print")),
         THROWBALL_KEYWORD(setOf("throwBall")),
         CONST_KEYWORD(setOf("const")),
@@ -19,13 +20,11 @@ enum class TokenType(val symbols: Set<String>? = null) {
         // Literals
         // --------------------
         NULL_LITERAL(setOf("null")),
-        TRUE_LITERAL(setOf("true")),
-        FALSE_LITERAL(setOf("false")),
         STRING_LITERAL,   // "text" or 'text'
         NUMERIC_LITERAL,  // 123, 45.67, etc.
         BOOLEAN_LITERAL,  // true or false (semantic grouping)
         IDENTIFIER,       // variable names, function names, etc.
-
+        VAR_KEYWORD(setOf("var")),
         INCREMENT(setOf("++")),
         DECREMENT(setOf("--")),
         PLUS(setOf("+")),
