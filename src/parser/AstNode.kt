@@ -31,7 +31,7 @@ data class Block(val stmtList: List<Stmt>) : Stmt() {
 data class RunStmt(val token: Token) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitRunStmt(this)
 }
-data class ExploreStmt(val target: Expr, val block: Block) : Stmt() {
+data class ExploreStmt(val block: Block) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitExploreStmt(this)
 }
 data class DefineStmt(val name: Token, val paramList: List<Token>, val block: Block) : Stmt() {
@@ -63,6 +63,7 @@ data class VariableExpr(val identifier: Token) : Expr() {
 data class AssignExpr(val target: Expr, val equals: Token, val value: Expr) : Expr() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitAssignExpr(this)
 }
+
 data class NamedArg(val name: Token, val value: Expr)
 
 data class CallExpr(val callee: Expr, val args: List<Expr>, val namedArgs: List<NamedArg> = emptyList()) : Expr() {

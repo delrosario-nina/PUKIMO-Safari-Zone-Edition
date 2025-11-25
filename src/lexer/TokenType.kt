@@ -25,8 +25,6 @@ enum class TokenType(val symbols: Set<String>? = null) {
         BOOLEAN_LITERAL,  // true or false (semantic grouping)
         IDENTIFIER,       // variable names, function names, etc.
         VAR_KEYWORD(setOf("var")),
-        INCREMENT(setOf("++")),
-        DECREMENT(setOf("--")),
         PLUS(setOf("+")),
         MINUS(setOf("-")),
         MULTIPLY(setOf("*")),

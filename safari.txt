@@ -86,7 +86,6 @@ print("  Turns: " + zone.turns);
 print("");
 
 print("--- Test 11: Use All Resources ---");
-var count = 0;
 zone.balls = 3;
 print("Starting with 3 balls");
 zone->useBall();
@@ -128,4 +127,3 @@ print("Is empty after clear? " + isEmptyNow);
 print("");
 
 print("=== All SafariZone Tests Complete! ===");
-
