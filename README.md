@@ -358,9 +358,9 @@ print("Team: " + myTeam);
 **stmt**                  --> NonIfStmt | IfStmt
 
 ### If statements
-**ifStmt**                --> "if" "(" expr ")" "{" block "}" [elseBlock]
+**ifStmt**                --> "if" "(" expr ")" block [elseBlock]
 
-**elseBlock**               --> "else" "{" block "}"
+**elseBlock**               --> "else" block
 
 ### Non-if Statements
 **nonIfStmt**             --> varDeclStmt
@@ -374,11 +374,11 @@ print("Team: " + myTeam);
 | block
 | ";"
 
-**varDeclStmt**           --> "var" IDENTIFIER "=" expr ";"
+**varDeclStmt**           --> "var" IDENTIFIER ["=" expr] ";"
 
 **exprStmt**              --> expr [";"]
 
-**PrintStmt**             --> "print" Expr ";"
+**PrintStmt**             --> "print" "(" Expr ")" ";"
 
 **ThrowBallStmt**         --> "throwBall" "(" Expr ")" ";"
 
@@ -386,13 +386,13 @@ print("Team: " + myTeam);
 
 **RunStmt**               --> "run" ";"
 
-**DefineStmt**            --> "define" IDENTIFIER "(" paramList ")" Block
+**DefineStmt**            --> "define" IDENTIFIER "(" [paramList] ")" Block
 
 **ParamList**             --> IDENTIFIER ( "," IDENTIFIER )*
 
-**Block**                 --> "{ StmtList "}"
+**Block**                 --> "{" StmtList "}"
 
-**ExploreStmt**           --> "explore" "(" Expr ")" "{" Block "}"
+**ExploreStmt**           --> "explore" "()" Block
 
 
 ### Precedence
@@ -429,11 +429,9 @@ expression            --> assignExpr
 /* PrimaryWithSuffixes: primary then zero or more suffixes (call, .prop, .method(args), ->method(args)) */
 **PrimaryWithSuffixes**   --> Primary { Suffix }
 
-**Suffix**                --> "." IDENTIFIER                    
-| "." IDENTIFIER "(" OptArgList ")"
+**Suffix**                --> "." IDENTIFIER
 | "->" IDENTIFIER "(" OptArgList ")"
 | "(" OptArgList ")"
-
 ### Primary Values
 **Primary**               --> IDENTIFIER
 | BUILTIN_CONSTRUCTOR_CALL
@@ -499,17 +497,6 @@ The language includes comprehensive test files:
 - **team.txt** - Complete Team object testing (14 tests)
 - **integration.txt** - Full Safari Zone adventure simulation
 
-### Running Tests
-
-Run a specific test:
-```powershell
-kotlin -cp PukiMO.jar MainKt <test-file>
-```
-
-Run all tests:
-```powershell
-.\run_tests.ps1
-```
 
 See **TEST_SUITE.md** for detailed test documentation.
 

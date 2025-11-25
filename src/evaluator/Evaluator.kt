@@ -3,6 +3,7 @@ package evaluator
 import lexer.*
 import parser.*
 
+
 /**
  * PokemonCollection - Represents a collection of Pokemon with generic collection methods.
  *
@@ -21,7 +22,77 @@ import parser.*
 class PokemonCollection(
     private val pokemonList: MutableList<String>,
     private val ownerType: String = "Collection"
-) : CustomObjectInterface {
+) : SafariZoneObjectInterface {
+
+    private val methodList: Map<String, (List<Any?>, EvaluatorErrorHandler, Token) -> Any?> = mapOf(
+        "add" to { args, errorHandler, token ->
+            val item = requireStringArg(args, errorHandler, token, "add")
+            pokemonList.add(item)
+            null
+        },
+        "remove" to { args, errorHandler, token ->
+            val item = requireStringArg(args, errorHandler, token, "remove")
+            pokemonList.remove(item)
+        },
+        "list" to { _, _, _ ->
+            pokemonList.joinToString(", ")
+        },
+        "find" to { args, errorHandler, token ->
+            val searchName = requireStringArg(args, errorHandler, token, "find")
+            val found = pokemonList.find { it.equals(searchName, ignoreCase = true) }
+            found ?: "null"
+        },
+        "random" to { _, errorHandler, token ->
+            if (pokemonList.isEmpty()) {
+                throw errorHandler.error(token, "$ownerType has no Pokemon.")
+            }
+            pokemonList.random()
+        },
+        "count" to { _, _, _ ->
+            pokemonList.size
+        },
+        "clear" to { _, _, _ ->
+            pokemonList.clear()
+            null
+        },
+        "isEmpty" to { _, _, _ ->
+            pokemonList.isEmpty()
+        }
+    )
+
+    override fun callMethod(
+        name: String,
+        args: List<Any?>,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ): Any? {
+        val method = methodList[name]
+        if (method != null) {
+            return method(args, errorHandler, token)
+        } else {
+            throw errorHandler.error(
+                token,
+                "PokemonCollection has no method '$name'. Available methods: ${methodList.keys.joinToString(", ")}"
+            )
+        }
+    }
+
+    private fun requireStringArg(
+        args: List<Any?>,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token,
+        methodName: String
+    ): String {
+        if (args.isEmpty()) {
+            throw errorHandler.error(token, "Method '$methodName' requires a string argument.")
+        }
+        val arg = args[0]
+        if (arg !is String) {
+            throw errorHandler.typeError(token, "Method '$methodName' requires a string argument.")
+        }
+        return arg
+    }
+
     override fun toString(): String = pokemonList.joinToString(", ")
 
     override fun getTypeName(): String = "PokemonCollection"
@@ -39,109 +110,6 @@ class PokemonCollection(
             "Cannot set properties on PokemonCollection."
         )
     }
-
-    override fun callMethod(name: String, args: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token): Any? {
-        return when (name) {
-            "add" -> {
-                val item = requireStringArg(args, errorHandler, token, name)
-                pokemonList.add(item)
-                null
-            }
-            "remove" -> {
-                val item = requireStringArg(args, errorHandler, token, name)
-                pokemonList.remove(item)
-            }
-            "list" -> pokemonList.joinToString(", ")
-            "find" -> {
-                val searchName = requireStringArg(args, errorHandler, token, "find")
-                val found = pokemonList.find { it.equals(searchName, ignoreCase = true) }
-                found ?: "null"
-            }
-            "random" -> {
-                if (pokemonList.isEmpty()) {
-                    throw errorHandler.error(token, "$ownerType has no Pokemon.")
-                }
-                pokemonList.random()
-            }
-            "count" -> pokemonList.size
-            "clear" -> {
-                pokemonList.clear()
-                null
-            }
-            "isEmpty" -> pokemonList.isEmpty()
-            else -> throw errorHandler.error(
-                token,
-                "PokemonCollection has no method '$name'. Available methods: add, remove, list, find, random, count, clear, isEmpty"
-            )
-        }
-    }
-
-    private fun requireStringArg(args: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token, methodName: String): String {
-        if (args.isEmpty()) {
-            throw errorHandler.error(token, "Method '$methodName' requires a string argument.")
-        }
-        val arg = args[0]
-        if (arg !is String) {
-            throw errorHandler.typeError(token, "Method '$methodName' requires a string argument.")
-        }
-        return arg
-    }
-}
-
-/**
- * CustomObjectInterface - Base interface for all custom objects in the language.
- *
- * This interface provides a unified way to access properties and call methods
- * on custom objects. All language-specific objects (SafariZone, Team, Pokemon, etc.)
- * should implement this interface.
- *
- * Benefits:
- * - Uniform property access across all object types
- * - Extensible method calling mechanism
- * - Easier to add new object types
- * - Cleaner evaluator code
- */
-interface CustomObjectInterface {
-    /**
-     * Gets a property value by name.
-     *
-     * @param name The property name
-     * @param errorHandler Error handler for throwing runtime errors
-     * @param token Token for error location reporting
-     * @return The property value
-     * @throws RuntimeError if property doesn't exist
-     */
-    fun getProperty(name: String, errorHandler: EvaluatorErrorHandler, token: Token): Any?
-
-    /**
-     * Sets a property value by name.
-     *
-     * @param name The property name
-     * @param value The new value to set
-     * @param errorHandler Error handler for throwing runtime errors
-     * @param token Token for error location reporting
-     * @throws RuntimeError if property is read-only or doesn't exist
-     */
-    fun setProperty(name: String, value: Any?, errorHandler: EvaluatorErrorHandler, token: Token)
-
-    /**
-     * Calls a method by name with the given arguments.
-     *
-     * @param name The method name
-     * @param args List of arguments to pass to the method
-     * @param errorHandler Error handler for throwing runtime errors
-     * @param token Token for error location reporting
-     * @return The method's return value
-     * @throws RuntimeError if method doesn't exist or arguments are invalid
-     */
-    fun callMethod(name: String, args: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token): Any?
-
-    /**
-     * Gets the type name of this object (e.g., "SafariZone", "Team", "Pokemon").
-     *
-     * @return The type name as a string
-     */
-    fun getTypeName(): String
 }
 
 /**
@@ -170,72 +138,95 @@ interface CustomObjectInterface {
  * @property balls Current remaining Safari Balls (defaults to initialBalls)
  * @property turns Current remaining turns (defaults to initialTurns)
  * @property pokemon Mutable list of Pokemon names in this zone
- */
-class SafariZoneObject(
+ */class SafariZoneObject(
     val initialBalls: Int,
     val initialTurns: Int,
     var balls: Int = initialBalls,
     var turns: Int = initialTurns,
     val pokemon: MutableList<String> = mutableListOf()
-) : CustomObjectInterface {
+) : SafariZoneObjectInterface {
+
+    // Property getters
+    private val propertyGetters = mapOf(
+        "initialBalls" to { initialBalls },
+        "initialTurns" to { initialTurns },
+        "balls" to { balls },
+        "turns" to { turns },
+        "pokemon" to { PokemonCollection(pokemon, "SafariZone") }
+    )
+
+    override fun getProperty(
+        name: String,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ): Any? {
+        return propertyGetters[name]?.invoke()
+            ?: throw errorHandler.propertyError(token, "SafariZone has no property '$name'")
+    }
+
+    // Property setters
+    private val propertySetters = mapOf<String, (Any?, EvaluatorErrorHandler, Token) -> Unit>(
+        "balls" to { value, errorHandler, token ->
+            if (value !is Int) throw errorHandler.typeError(token, "balls must be an integer.")
+            balls = value
+        },
+        "turns" to { value, errorHandler, token ->
+            if (value !is Int) throw errorHandler.typeError(token, "turns must be an integer.")
+            turns = value
+        }
+    )
+
+    override fun setProperty(
+        name: String,
+        value: Any?,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ) {
+        propertySetters[name]?.invoke(value, errorHandler, token)
+            ?: throw errorHandler.propertyError(token, "Cannot modify property '$name'.")
+    }
+
+    // Method dispatch map
+    private val methodList = mapOf(
+        "useBall" to { _: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token ->
+            if (balls <= 0) throw errorHandler.error(token, "No Safari Balls remaining!")
+            balls--
+            null
+        },
+        "useTurn" to { _: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token ->
+            if (turns <= 0) throw errorHandler.error(token, "No turns remaining!")
+            turns--
+            null
+        },
+        "reset" to { _: List<Any?>, _: EvaluatorErrorHandler, _: Token ->
+            balls = initialBalls
+            turns = initialTurns
+            null
+        },
+        "isGameOver" to { _: List<Any?>, _: EvaluatorErrorHandler, _: Token ->
+            balls <= 0 || turns <= 0
+        }
+    )
+
+    override fun callMethod(
+        name: String,
+        args: List<Any?>,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ): Any? {
+        val method = methodList[name]
+        if (method != null) {
+            return method(args, errorHandler, token)
+        } else {
+            throw errorHandler.error(
+                token,
+                "SafariZone has no method '$name'. Use .pokemon-> for Pokemon management. Available methods: ${methodList.keys.joinToString(", ")}"
+            )
+        }
+    }
+
     override fun toString(): String = "SafariZone(balls=$balls, turns=$turns)"
-
     override fun getTypeName(): String = "SafariZone"
-
-    override fun getProperty(name: String, errorHandler: EvaluatorErrorHandler, token: Token): Any? {
-        return when (name) {
-            "initialBalls" -> initialBalls
-            "initialTurns" -> initialTurns
-            "balls" -> balls
-            "turns" -> turns
-            "pokemon" -> PokemonCollection(pokemon, "SafariZone")
-            else -> throw errorHandler.propertyError(token, "SafariZone has no property '$name'")
-        }
-    }
-
-    override fun setProperty(name: String, value: Any?, errorHandler: EvaluatorErrorHandler, token: Token) {
-        when (name) {
-            "balls" -> {
-                if (value !is Int) {
-                    throw errorHandler.typeError(token, "balls must be an integer.")
-                }
-                balls = value
-            }
-            "turns" -> {
-                if (value !is Int) {
-                    throw errorHandler.typeError(token, "turns must be an integer.")
-                }
-                turns = value
-            }
-            else -> throw errorHandler.propertyError(token, "Cannot modify property '$name'.")
-        }
-    }
-
-    override fun callMethod(name: String, args: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token): Any? {
-        return when (name) {
-            "useBall" -> {
-                if (balls <= 0) {
-                    throw errorHandler.error(token, "No Safari Balls remaining!")
-                }
-                balls--
-                null
-            }
-            "useTurn" -> {
-                if (turns <= 0) {
-                    throw errorHandler.error(token, "No turns remaining!")
-                }
-                turns--
-                null
-            }
-            "reset" -> {
-                balls = initialBalls
-                turns = initialTurns
-                null
-            }
-            "isGameOver" -> balls <= 0 || turns <= 0
-            else -> throw errorHandler.error(token, "SafariZone has no method '$name'. Use .pokemon-> for Pokemon management.")
-        }
-    }
 }
 
 /**
@@ -259,56 +250,73 @@ class SafariZoneObject(
  * ```
  *
  * @property trainerName The name of the Pokemon trainer
- * @property pokemons Mutable list of Pokemon names on the team
+ * @property pokemons Mutable list of Pokemon on the team
  * @property maxSize Maximum number of Pokemon allowed (default 6)
  */
 class TeamObject(
     val trainerName: String,
     val pokemons: MutableList<String> = mutableListOf(),
-    val maxSize: Int = 6
-) : CustomObjectInterface {
-    override fun toString(): String = "Team($trainerName, ${pokemons.size}/${maxSize} Pokemon)"
+    val teamSize: Int = 6
+) : SafariZoneObjectInterface {
 
-    override fun getTypeName(): String = "Team"
+    // Property getters (for getProperty)
+    private val propertyGetters: Map<String, () -> Any?> = mapOf(
+        "trainerName" to { trainerName },
+        "maxSize" to { teamSize },
+        "pokemonCount" to { pokemons.size },
+        "pokemon" to { PokemonCollection(pokemons, "Team") }
+    )
 
-    override fun getProperty(name: String, errorHandler: EvaluatorErrorHandler, token: Token): Any? {
-        return when (name) {
-            "trainerName" -> trainerName
-            "maxSize" -> maxSize
-            "pokemonCount" -> pokemons.size
-            "pokemon" -> PokemonCollection(pokemons, "Team")
-            else -> throw errorHandler.propertyError(token, "Team has no property '$name'")
-        }
+    override fun getProperty(
+        name: String,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ): Any? {
+        return propertyGetters[name]?.invoke()
+            ?: throw errorHandler.propertyError(token, "Team has no property '$name'")
     }
 
-    override fun setProperty(name: String, value: Any?, errorHandler: EvaluatorErrorHandler, token: Token) {
+    // Team object: all properties are read-only
+    override fun setProperty(
+        name: String,
+        value: Any?,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ) {
         throw errorHandler.propertyError(token, "Team properties are read-only.")
     }
 
-    override fun callMethod(name: String, args: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token): Any? {
-        return when (name) {
-            "isFull" -> pokemons.size >= maxSize
-            "isEmpty" -> pokemons.isEmpty()
-            "has" -> {
-                val pokemonName = requireStringArg(args, errorHandler, token, "has")
-                hasPokemon(pokemonName)
-            }
-            else -> throw errorHandler.error(token, "Team has no method '$name'. Use .pokemon-> for Pokemon management.")
+    // Methods map
+    private val methodList: Map<String, (List<Any?>, EvaluatorErrorHandler, Token) -> Any?> = mapOf(
+        "isFull" to { _, _, _ -> pokemons.size >= teamSize },
+        "isEmpty" to { _, _, _ -> pokemons.isEmpty() },
+        "has" to { args, errorHandler, token ->
+            val pokemonName = requireStringArg(args, errorHandler, token, "has")
+            hasPokemon(pokemonName)
         }
+    )
+
+    override fun callMethod(
+        name: String,
+        args: List<Any?>,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token
+    ): Any? {
+        return methodList[name]?.invoke(args, errorHandler, token)
+            ?: throw errorHandler.error(token, "Team has no method '$name'. Use .pokemon-> for Pokemon management. Available methods: ${methodList.keys.joinToString(", ")}")
     }
 
-    /**
-     * Checks if a Pokemon with the given name is on the team.
-     * Case-insensitive search.
-     *
-     * @param name Pokemon name to search for
-     * @return true if Pokemon is on team, false otherwise
-     */
+    // -- helper for method "has"
     fun hasPokemon(name: String): Boolean {
         return pokemons.any { it.equals(name, ignoreCase = true) }
     }
 
-    private fun requireStringArg(args: List<Any?>, errorHandler: EvaluatorErrorHandler, token: Token, methodName: String): String {
+    private fun requireStringArg(
+        args: List<Any?>,
+        errorHandler: EvaluatorErrorHandler,
+        token: Token,
+        methodName: String
+    ): String {
         if (args.isEmpty()) {
             throw errorHandler.error(token, "Method '$methodName' requires a string argument.")
         }
@@ -318,6 +326,9 @@ class TeamObject(
         }
         return arg
     }
+
+    override fun toString(): String = "Team($trainerName, ${pokemons.size}/${teamSize} Pokemon)"
+    override fun getTypeName(): String = "Team"
 }
 
 
@@ -350,18 +361,20 @@ class TeamObject(
  */
 class Evaluator : AstVisitor<Any?> {
     /** Current environment for variable lookups and assignments */
-    private var environment = Environment()
-
-    /** Error handler for generating and throwing runtime errors */
     val errorHandler = EvaluatorErrorHandler()
+    private var environment = Environment(errorHandler = errorHandler)
+    private var isReplMode: Boolean = false
+    private val arithmeticEvaluator = ArithmeticEvaluator(errorHandler)
+    private val safariZoneObjects = SafariZoneObjects(errorHandler, this)
+    /** Error handler for generating and throwing runtime errors */
 
     init {
         // Register built-in constructors as special marker values
         // These are recognized in visitCallExpr to create objects
-        environment.define("SafariZone", "BUILTIN_CONSTRUCTOR_SAFARIZONE")
-        environment.define("Team", "BUILTIN_CONSTRUCTOR_TEAM")
-        environment.define("Object", "BUILTIN_CONSTRUCTOR_OBJECT")
-        environment.define("Pokemon", "BUILTIN_CONSTRUCTOR_POKEMON")
+        environment.define(Token(TokenType.IDENTIFIER, "SafariZone", null, 0), "BUILTIN_CONSTRUCTOR_SAFARIZONE")
+        environment.define(Token(TokenType.IDENTIFIER, "Team", null, 0), "BUILTIN_CONSTRUCTOR_TEAM")
+        environment.define(Token(TokenType.IDENTIFIER, "Object", null, 0), "BUILTIN_CONSTRUCTOR_OBJECT")
+        environment.define(Token(TokenType.IDENTIFIER, "Pokemon", null, 0), "BUILTIN_CONSTRUCTOR_POKEMON")
     }
 
     /**
@@ -371,7 +384,7 @@ class Evaluator : AstVisitor<Any?> {
      * @param node The AST node to evaluate
      * @return The result of evaluation (type depends on node type)
      */
-    fun evaluate(node: AstNode): Any? {
+    fun evaluate(node: AstNode, isReplMode: Boolean): Any? {
         return node.accept(this)
     }
 
@@ -384,9 +397,11 @@ class Evaluator : AstVisitor<Any?> {
      */
     override fun visitProgram(program: Program): Any? {
         var lastValue: Any? = null
+
         for (stmt in program.stmtList) {
             lastValue = stmt.accept(this)
         }
+
         return lastValue
     }
 
@@ -430,7 +445,7 @@ class Evaluator : AstVisitor<Any?> {
      */
     override fun visitVarDeclStmt(stmt: VarDeclStmt): Any? {
         val value = stmt.expression.accept(this)
-        environment.define(stmt.identifier.lexeme, value)
+        environment.define(stmt.identifier, value)
         return null
     }
 
@@ -438,11 +453,22 @@ class Evaluator : AstVisitor<Any?> {
      * Block statements are not yet implemented.
      */
     override fun visitBlock(block: Block): Any? {
-        throw errorHandler.error(
-            Token(TokenType.LEFT_BRACE, "{", null, 0),
-            "Block statements are not yet implemented."
-        )
+        val previous = environment
+
+        try {
+            environment = Environment(enclosing = previous)
+
+            var lastValue: Any? = null
+            for (stmt in block.stmtList) {
+                lastValue = stmt.accept(this)
+            }
+
+            return lastValue
+        } finally {
+            environment = previous
+        }
     }
+
 
     /**
      * If statements are not yet implemented.
@@ -560,11 +586,11 @@ class Evaluator : AstVisitor<Any?> {
 
         return when (expr.operator.type) {
             TokenType.MINUS -> {
-                checkNumberOperand(expr.operator, right)
+                // Type check inline
                 when (right) {
                     is Double -> -right
                     is Int -> -right
-                    else -> 0 // Should never reach here due to check
+                    else -> throw errorHandler.typeError(expr.operator, "Operand must be a number.")
                 }
             }
             TokenType.NOT -> !isTruthy(right)
@@ -605,133 +631,11 @@ class Evaluator : AstVisitor<Any?> {
      * @return The result of applying the operator
      * @throws RuntimeError if operand types are invalid for the operator
      */
-    override fun visitBinaryExpr(expr: BinaryExpr): Any? {
-        val left = expr.left.accept(this)
+    override fun visitBinaryExpr(node: BinaryExpr): Any? {
+        val left = node.left.accept(this)
+        val right = node.right.accept(this)
 
-        // Short-circuit evaluation for logical operators
-        // Don't evaluate right side if result is already determined
-        when (expr.operator.type) {
-            TokenType.AND -> return if (!isTruthy(left)) false else isTruthy(expr.right.accept(this))
-            TokenType.OR -> return if (isTruthy(left)) true else isTruthy(expr.right.accept(this))
-            else -> {}
-        }
-
-        val right = expr.right.accept(this)
-
-        return when (expr.operator.type) {
-            // Arithmetic operators
-            TokenType.PLUS -> {
-                when {
-                    left is Double && right is Double -> left + right
-                    left is Int && right is Int -> left + right
-                    left is Double && right is Int -> left + right
-                    left is Int && right is Double -> left + right
-                    left is String && right is String -> left + right
-                    // Allow string concatenation with any type
-                    left is String -> left + stringify(right)
-                    right is String -> stringify(left) + right
-                    else -> throw errorHandler.typeError(
-                        expr.operator,
-                        "Operands must be two numbers or two strings."
-                    )
-                }
-            }
-            TokenType.MINUS -> {
-                checkNumberOperands(expr.operator, left, right)
-                when {
-                    left is Double && right is Double -> left - right
-                    left is Int && right is Int -> left - right
-                    left is Double && right is Int -> left - right
-                    left is Int && right is Double -> left - right
-                    else -> 0 // Should never reach here due to check
-                }
-            }
-            TokenType.MULTIPLY -> {
-                checkNumberOperands(expr.operator, left, right)
-                when {
-                    left is Double && right is Double -> left * right
-                    left is Int && right is Int -> left * right
-                    left is Double && right is Int -> left * right
-                    left is Int && right is Double -> left * right
-                    else -> 0
-                }
-            }
-            TokenType.DIVIDE -> {
-                checkNumberOperands(expr.operator, left, right)
-                val divisor = when (right) {
-                    is Double -> right
-                    is Int -> right.toDouble()
-                    else -> 0.0
-                }
-                if (divisor == 0.0) {
-                    throw errorHandler.error(expr.operator, "Division by zero.")
-                }
-                when (left) {
-                    is Double -> left / divisor
-                    is Int -> left / divisor
-                    else -> 0.0
-                }
-            }
-            TokenType.MODULO -> {
-                checkNumberOperands(expr.operator, left, right)
-                when {
-                    left is Int && right is Int -> {
-                        if (right == 0) {
-                            throw errorHandler.error(expr.operator, "Division by zero.")
-                        }
-                        left % right
-                    }
-                    left is Double && right is Double -> {
-                        if (right == 0.0) {
-                            throw errorHandler.error(expr.operator, "Division by zero.")
-                        }
-                        left % right
-                    }
-                    left is Int && right is Double -> {
-                        if (right == 0.0) {
-                            throw errorHandler.error(expr.operator, "Division by zero.")
-                        }
-                        left % right
-                    }
-                    left is Double && right is Int -> {
-                        if (right == 0) {
-                            throw errorHandler.error(expr.operator, "Division by zero.")
-                        }
-                        left % right
-                    }
-                    else -> throw errorHandler.typeError(
-                        expr.operator,
-                        "Modulo operator requires numeric operands."
-                    )
-                }
-            }
-            // Comparison operators
-            TokenType.GREATER_THAN -> {
-                checkNumberOperands(expr.operator, left, right)
-                toDouble(left) > toDouble(right)
-            }
-            TokenType.GREATER_EQUAL -> {
-                checkNumberOperands(expr.operator, left, right)
-                toDouble(left) >= toDouble(right)
-            }
-            TokenType.LESS_THAN -> {
-                checkNumberOperands(expr.operator, left, right)
-                toDouble(left) < toDouble(right)
-            }
-            TokenType.LESS_EQUAL -> {
-                checkNumberOperands(expr.operator, left, right)
-                toDouble(left) <= toDouble(right)
-            }
-
-            // Equality operators
-            TokenType.EQUAL_EQUAL -> isEqual(left, right)
-            TokenType.NOT_EQUAL -> !isEqual(left, right)
-
-            else -> throw errorHandler.error(
-                expr.operator,
-                "Unknown binary operator '${expr.operator.lexeme}'."
-            )
-        }
+        return arithmeticEvaluator.evaluate(left, node.operator, right)
     }
 
     /**
@@ -759,56 +663,26 @@ class Evaluator : AstVisitor<Any?> {
             is VariableExpr -> {
                 environment.assign(expr.target.identifier, value)
             }
-            is PropertyAccessExpr -> {
-                // Handle property assignment for objects
-                val obj = expr.target.primaryWithSuffixes.accept(this)
-                val propertyName = expr.target.identifier.lexeme
 
-                when (obj) {
-                    is SafariZoneObject -> {
-                        when (propertyName) {
-                            "balls" -> {
-                                if (value !is Int) {
-                                    throw errorHandler.typeError(
-                                        expr.target.identifier,
-                                        "balls must be an integer."
-                                    )
-                                }
-                                obj.balls = value
-                            }
-                            "turns" -> {
-                                if (value !is Int) {
-                                    throw errorHandler.typeError(
-                                        expr.target.identifier,
-                                        "turns must be an integer."
-                                    )
-                                }
-                                obj.turns = value
-                            }
-                            else -> throw errorHandler.propertyError(
-                                expr.target.identifier,
-                                "Cannot modify property '$propertyName'."
-                            )
-                        }
-                    }
-                    is TeamObject -> {
-                        throw errorHandler.propertyError(
-                            expr.target.identifier,
-                            "Team properties are read-only."
-                        )
-                    }
-                    else -> throw errorHandler.typeError(
+            is PropertyAccessExpr -> {
+                val obj = expr.target.primaryWithSuffixes.accept(this)
+
+                if (obj !is SafariZoneObjectInterface) {
+                    throw errorHandler.typeError(
                         expr.equals,
-                        "Cannot access property on non-object type."
+                        "Cannot set property on non-object type"
                     )
                 }
-            }
-            else -> {
-                throw errorHandler.error(
-                    expr.equals,
-                    "Invalid assignment target."
+
+                obj.setProperty(
+                    expr.target.identifier.lexeme,
+                    value,
+                    errorHandler,
+                    expr.target.identifier
                 )
             }
+
+            else -> throw errorHandler.error(expr.equals, "Invalid assignment target")
         }
 
         return value
@@ -850,23 +724,27 @@ class Evaluator : AstVisitor<Any?> {
         // Handle method calls on objects FIRST (before evaluating callee)
         // This prevents treating methods as properties
         if (expr.callee is PropertyAccessExpr) {
-            val propertyExpr = expr.callee as PropertyAccessExpr
+            val propertyExpr = expr.callee
             val obj = propertyExpr.primaryWithSuffixes.accept(this)
             val methodName = propertyExpr.identifier.lexeme
 
             // Evaluate arguments
             val arguments = expr.args.map { it.accept(this) }
 
-            // Use the CustomObjectInterface for unified method calling
+            // Use the SafariZoneObjectInterface for unified method calling
             when (obj) {
-                is CustomObjectInterface -> {
+                is SafariZoneObjectInterface -> {
                     return obj.callMethod(methodName, arguments, errorHandler, propertyExpr.identifier)
                 }
 
-                else -> throw errorHandler.typeError(
-                    propertyExpr.identifier,
-                    "Cannot call method on non-object type."
-                )
+                else -> {
+                    // Attach a helpful hint suggesting the user may have used '.' instead of '->'
+                    errorHandler.appendHintToLast(propertyExpr.identifier, "Did you mean to call a method with '->' (e.g. obj->${methodName}())?")
+                    throw errorHandler.typeError(
+                        propertyExpr.identifier,
+                        "Cannot call method on non-object type."
+                    )
+                }
             }
         }
 
@@ -875,73 +753,21 @@ class Evaluator : AstVisitor<Any?> {
 
 
         // Handle built-in constructors
+        // Try built-in constructors first
         if (expr.callee is VariableExpr) {
             val calleeVar = expr.callee as VariableExpr
             val funcName = calleeVar.identifier.lexeme
 
-            when (funcName) {
-                "SafariZone" -> {
-                    // Supports: SafariZone(), SafariZone(30, 500), SafariZone(balls=30, turns=500)
+            val builtinObject = safariZoneObjects.tryCreate(
+                funcName,
+                arguments,
+                expr.namedArgs,
+                calleeVar.identifier
+            )
 
-                    val defaults = mapOf("balls" to 10, "turns" to 10)
-                    val params = resolveArguments(
-                        calleeVar.identifier,
-                        listOf("balls", "turns"),
-                        arguments,
-                        expr.namedArgs,
-                        defaults
-                    )
 
-                    val balls = params["balls"]
-                    if (balls !is Int) {
-                        throw errorHandler.typeError(
-                            calleeVar.identifier,
-                            "SafariZone balls must be an integer."
-                        )
-                    }
-
-                    val turns = params["turns"]
-                    if (turns !is Int) {
-                        throw errorHandler.typeError(
-                            calleeVar.identifier,
-                            "SafariZone turns must be an integer."
-                        )
-                    }
-
-                    return SafariZoneObject(balls, turns)
-                }
-
-                "Team" -> {
-                    // Team(trainerName: String, maxSize: Int = 6)
-                    // Supports: Team("Ash"), Team("Ash", 8), Team(trainerName="Ash", maxSize=8)
-
-                    val defaults = mapOf("maxSize" to 6)  // trainerName is required
-                    val params = resolveArguments(
-                        calleeVar.identifier,
-                        listOf("trainerName", "maxSize"),
-                        arguments,
-                        expr.namedArgs,
-                        defaults
-                    )
-
-                    val trainerName = params["trainerName"]
-                    if (trainerName !is String) {
-                        throw errorHandler.typeError(
-                            calleeVar.identifier,
-                            "Team trainerName must be a string."
-                        )
-                    }
-
-                    val maxSize = params["maxSize"]
-                    if (maxSize !is Int) {
-                        throw errorHandler.typeError(
-                            calleeVar.identifier,
-                            "Team maxSize must be an integer."
-                        )
-                    }
-
-                    return TeamObject(trainerName, mutableListOf(), maxSize)
-                }
+            if (builtinObject != null) {
+                return builtinObject
             }
         }
 
@@ -976,92 +802,15 @@ class Evaluator : AstVisitor<Any?> {
      */
     override fun visitPropertyAccessExpr(node: PropertyAccessExpr): Any? {
         val obj = node.primaryWithSuffixes.accept(this)
-        val propertyName = node.identifier.lexeme
 
-        return when (obj) {
-            is SafariZoneObject -> {
-                when (propertyName) {
-                    "initialBalls" -> obj.initialBalls
-                    "initialTurns" -> obj.initialTurns
-                    "balls" -> obj.balls
-                    "turns" -> obj.turns
-                    "pokemon" -> obj.getProperty(propertyName, errorHandler, node.identifier)
-                    else -> {
-                        // Check if it's a resource management method
-                        val methodNames = setOf("useBall", "useTurn", "reset", "isGameOver")
-                        val collectionMethods = setOf("add", "remove", "list", "find", "random",
-                                                      "count", "clear", "isEmpty")
-                        if (propertyName in methodNames) {
-                            throw errorHandler.error(
-                                node.identifier,
-                                "Cannot access method '$propertyName' with dot operator. Use '->' for methods: myZone->$propertyName()"
-                            )
-                        }
-                        if (propertyName in collectionMethods) {
-                            throw errorHandler.error(
-                                node.identifier,
-                                "Collection methods moved to .pokemon property. Use: myZone.pokemon->$propertyName()"
-                            )
-                        }
-                        throw errorHandler.propertyError(
-                            node.identifier,
-                            "SafariZone has no property '$propertyName'"
-                        )
-                    }
-                }
-            }
-
-            is TeamObject -> {
-                when (propertyName) {
-                    "trainerName" -> obj.trainerName
-                    "maxSize" -> obj.maxSize
-                    "pokemon" -> obj.getProperty(propertyName, errorHandler, node.identifier)
-                    else -> {
-                        // Check if it's a team method
-                        val methodNames = setOf("isFull", "isEmpty", "has")
-                        val collectionMethods = setOf("add", "remove", "list", "find", "random",
-                                                      "count", "clear")
-                        if (propertyName in methodNames) {
-                            throw errorHandler.error(
-                                node.identifier,
-                                "Cannot access method '$propertyName' with dot operator. Use '->' for methods: myTeam->$propertyName()"
-                            )
-                        }
-                        if (propertyName in collectionMethods) {
-                            throw errorHandler.error(
-                                node.identifier,
-                                "Collection methods moved to .pokemon property. Use: myTeam.pokemon->$propertyName()"
-                            )
-                        }
-                        throw errorHandler.propertyError(
-                            node.identifier,
-                            "Team has no property '$propertyName'"
-                        )
-                    }
-                }
-            }
-
-            is PokemonCollection -> {
-                // PokemonCollection has no properties, only methods
-                val methodNames = setOf("add", "remove", "list", "find", "random",
-                                       "count", "clear", "isEmpty")
-                if (propertyName in methodNames) {
-                    throw errorHandler.error(
-                        node.identifier,
-                        "Cannot access method '$propertyName' with dot operator. Use '->': .pokemon->$propertyName()"
-                    )
-                }
-                throw errorHandler.error(
-                    node.identifier,
-                    "PokemonCollection has no properties. Use methods with '->'. Available methods: add, remove, list, find, random, count, clear, isEmpty"
-                )
-            }
-
-            else -> throw errorHandler.typeError(
+        if (obj !is SafariZoneObjectInterface) {
+            throw errorHandler.typeError(
                 node.identifier,
-                "Cannot access property on non-object type"
+                "Cannot access property '${node.identifier.lexeme}' on non-object type"
             )
         }
+
+        return obj.getProperty(node.identifier.lexeme, errorHandler, node.identifier)
     }
 
     // ========== Helper Methods ==========
@@ -1085,23 +834,6 @@ class Evaluator : AstVisitor<Any?> {
         return true
     }
 
-    /**
-     * Checks if two values are equal using value equality.
-     *
-     * Equality rules:
-     * - null == null → true
-     * - null == anything else → false
-     * - Otherwise uses Kotlin's == (value equality)
-     *
-     * @param a First value
-     * @param b Second value
-     * @return true if values are equal
-     */
-    private fun isEqual(a: Any?, b: Any?): Boolean {
-        if (a == null && b == null) return true
-        if (a == null) return false
-        return a == b
-    }
 
     /**
      * Converts a value to a string for printing.
@@ -1139,148 +871,5 @@ class Evaluator : AstVisitor<Any?> {
         }
 
         return value.toString()
-    }
-
-    /**
-     * Converts a number to Double for numeric comparisons.
-     * Handles both Int and Double types.
-     *
-     * @param value The number to convert
-     * @return Double representation
-     * @throws IllegalArgumentException if value is not a number
-     */
-    private fun toDouble(value: Any?): Double {
-        return when (value) {
-            is Double -> value
-            is Int -> value.toDouble()
-            else -> throw IllegalArgumentException("Cannot convert to double")
-        }
-    }
-
-    /**
-     * Type checking for unary operators.
-     * Ensures the operand is a number (Int or Double).
-     *
-     * @param operator The operator token (for error reporting)
-     * @param operand The operand value
-     * @throws RuntimeError if operand is not a number
-     */
-    private fun checkNumberOperand(operator: Token, operand: Any?) {
-        if (operand is Double || operand is Int) return
-        throw errorHandler.typeError(operator, "Operand must be a number.")
-    }
-
-    /**
-     * Type checking for binary operators.
-     * Ensures both operands are numbers (Int or Double).
-     *
-     * @param operator The operator token (for error reporting)
-     * @param left The left operand
-     * @param right The right operand
-     * @throws RuntimeError if either operand is not a number
-     */
-    private fun checkNumberOperands(operator: Token, left: Any?, right: Any?) {
-        if ((left is Double || left is Int) && (right is Double || right is Int)) return
-        throw errorHandler.typeError(operator, "Operands must be numbers.")
-    }
-
-    /**
-     * Helper to validate and extract string argument for methods.
-     * Checks that the first argument exists and is a string.
-     *
-     * @param arguments List of arguments
-     * @param token Token for error reporting
-     * @param methodName Method name for error messages
-     * @return The string argument
-     * @throws RuntimeError if argument is missing or not a string
-     */
-    private fun requireStringArg(arguments: List<Any?>, token: Token, methodName: String): String {
-        if (arguments.isEmpty() || arguments[0] !is String) {
-            throw errorHandler.argumentError(token, "$methodName() requires a string argument.")
-        }
-        return arguments[0] as String
-    }
-
-    /**
-     * Resolves function arguments by merging positional args, named args, and defaults.
-     * Supports Python-like named arguments: func(a=1, b=2) or func(1, b=2)
-     *
-     * Process:
-     * 1. Apply positional arguments in order
-     * 2. Apply named arguments (can override or add to positional)
-     * 3. Fill missing parameters with defaults
-     * 4. Error if any required parameter is missing
-     *
-     * Example:
-     * ```
-     * SafariZone(30, turns=500)
-     * → balls=30 (positional), turns=500 (named)
-     * ```
-     *
-     * @param token Token for error reporting
-     * @param paramNames List of parameter names in order
-     * @param positionalArgs List of positional argument values
-     * @param namedArgs List of named arguments
-     * @param defaults Map of parameter names to default values
-     * @return Map of parameter names to resolved values
-     * @throws RuntimeError if arguments are invalid or required parameters missing
-     */
-    private fun resolveArguments(
-        token: Token,
-        paramNames: List<String>,
-        positionalArgs: List<Any?>,
-        namedArgs: List<NamedArg>,
-        defaults: Map<String, Any?> = emptyMap()
-    ): Map<String, Any?> {
-        val result = mutableMapOf<String, Any?>()
-
-        // 1. Apply positional arguments
-        if (positionalArgs.size > paramNames.size) {
-            throw errorHandler.argumentError(
-                token,
-                "Too many arguments: expected ${paramNames.size}, got ${positionalArgs.size}"
-            )
-        }
-
-        for (i in positionalArgs.indices) {
-            result[paramNames[i]] = positionalArgs[i]
-        }
-
-        // 2. Apply named arguments
-        for (namedArg in namedArgs) {
-            val argName = namedArg.name.lexeme
-
-            if (argName !in paramNames) {
-                throw errorHandler.argumentError(
-                    namedArg.name,
-                    "Unknown parameter '$argName'"
-                )
-            }
-
-            if (argName in result) {
-                throw errorHandler.argumentError(
-                    namedArg.name,
-                    "Parameter '$argName' specified multiple times"
-                )
-            }
-
-            result[argName] = namedArg.value.accept(this)
-        }
-
-        // 3. Apply defaults for missing parameters
-        for (paramName in paramNames) {
-            if (paramName !in result) {
-                if (paramName in defaults) {
-                    result[paramName] = defaults[paramName]
-                } else {
-                    throw errorHandler.argumentError(
-                        token,
-                        "Missing required parameter '$paramName'"
-                    )
-                }
-            }
-        }
-
-        return result
     }
 }

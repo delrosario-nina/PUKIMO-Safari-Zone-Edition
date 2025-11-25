@@ -38,7 +38,7 @@ class AstPrinter : AstVisitor<String> {
         "(${node.token.lexeme})"
 
     override fun visitExploreStmt(node: ExploreStmt): String =
-        "(explore ${node.target.accept(this)} ${node.block.accept(this)})"
+        "(explore  ${node.block.accept(this)})"
 
     override fun visitThrowBallStmt(node: ThrowBallStmt): String =
         "(throwBall ${node.expression.accept(this)})"

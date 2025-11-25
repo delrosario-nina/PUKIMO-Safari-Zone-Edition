@@ -2,28 +2,103 @@ package parser
 
 import lexer.*
 
-/*
+/**
  * Recursive descent parser for the PukiMO language.
- * Implements a precedence-climbing algorithm for expression parsing.
- * Follows the language grammar specified in README.md.
+ * Implements TypeScript-style error recovery: collects multiple errors
+ * and provides helpful context without stopping at the first error.
  */
 class Parser(
     private val tokens: List<Token>,
     private val tokenBuffer: TokenBuffer = TokenBuffer(tokens),
     private val context: ParsingContext = ParsingContext(),
     private val errorHandler: ErrorHandler = ErrorHandler(),
-    private val replMode: Boolean = false  // REPL mode makes semicolons optional
 ) {
 
     fun parse(): Program {
         val stmtList = mutableListOf<Stmt>()
+
         while (!tokenBuffer.isAtEnd()) {
-            stmtList.add(
-                if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
-                else parseNonIfStmt()
-            )
+            try {
+                stmtList.add(
+                    if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
+                    else parseNonIfStmt()
+                )
+            } catch (e: ParserError) {
+                errorHandler.addContextualHints(e)
+                synchronize()
+            }
         }
+
+        if (errorHandler.hasErrors()) {
+            errorHandler.reportErrors()
+        }
+
         return Program(stmtList)
+    }
+
+    private fun synchronize() {
+        addDelimiterHints()
+        skipToNextStatement()
+    }
+
+    /**
+     * Adds hints for unclosed delimiters if the error occurred after ( or {
+     */
+    private fun addDelimiterHints() {
+        try {
+            val errorToken = tokenBuffer.peek()
+            val previousTokenType = tokenBuffer.previous().type
+
+            when (previousTokenType) {
+                TokenType.LEFT_PAREN ->
+                    errorHandler.appendHintToLast(errorToken, "Unclosed '(' - missing ')'")
+
+                TokenType.LEFT_BRACE ->
+                    errorHandler.appendHintToLast(errorToken, "Unclosed '{' - missing '}'")
+
+                else -> { }
+            }
+
+        } catch (_: Exception) {
+            // Ignore if previous() fails
+        }
+    }
+
+    /**
+     * Skips tokens until a statement boundary or keyword is found
+     */
+    private fun skipToNextStatement() {
+        tokenBuffer.advance()
+
+        while (!tokenBuffer.isAtEnd()) {
+            if (isStatementBoundary()) return
+            if (isStatementKeyword()) return
+            tokenBuffer.advance()
+        }
+    }
+
+    /**
+     * Checks if we're at a statement boundary (semicolon)
+     */
+    private fun isStatementBoundary(): Boolean {
+        return tokenBuffer.previous().type == TokenType.SEMICOLON
+    }
+
+    /**
+     * Checks if we're at a statement-starting keyword
+     */
+    private fun isStatementKeyword(): Boolean {
+        return when (tokenBuffer.peek().type) {
+            TokenType.VAR_KEYWORD,
+            TokenType.DEFINE_KEYWORD,
+            TokenType.IF_KEYWORD,
+            TokenType.PRINT_KEYWORD,
+            TokenType.RUN_KEYWORD,
+            TokenType.EXPLORE_KEYWORD,
+            TokenType.THROWBALL_KEYWORD,
+            TokenType.RETURN_KEYWORD -> true
+            else -> false
+        }
     }
 
     private fun parseNonIfStmt(): Stmt {
@@ -68,7 +143,7 @@ class Parser(
     }
 
     private fun parseVarDeclStmt(): Stmt {
-        val identifier = consume(TokenType.IDENTIFIER, "Expected variable name.")
+        val identifier = consume(TokenType.IDENTIFIER, "Expected variable name")
 
         val expr = if (tokenBuffer.match(TokenType.ASSIGN)) {
             parseExpression()
@@ -76,48 +151,45 @@ class Parser(
             LiteralExpr(null)
         }
 
-        consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.")
+        consume(TokenType.SEMICOLON, "Expected ';' after variable declaration")
         return VarDeclStmt(identifier, expr)
     }
 
     private fun parseDefineStmt(): Stmt {
-        // DEFINE_KEYWORD already consumed by match() in parseNonIfStmt
         val name = consume(TokenType.IDENTIFIER, "Expected function name after 'define'")
 
+        consume(TokenType.LEFT_PAREN, "Expected '(' after function name")
         val params = mutableListOf<Token>()
-        if (tokenBuffer.match(TokenType.LEFT_PAREN)) {
             if (!tokenBuffer.check(TokenType.RIGHT_PAREN)) {
                 do {
                     params.add(consume(TokenType.IDENTIFIER, "Expected parameter name"))
                 } while (tokenBuffer.match(TokenType.COMMA))
             }
             consume(TokenType.RIGHT_PAREN, "Expected ')' after function parameters")
-        }
+
 
         val body = parseBlock()
         return DefineStmt(name, params, body)
     }
 
     private fun parseThrowBallStmt(): Stmt {
-        // THROWBALL_KEYWORD already consumed by match() in parseNonIfStmt
         consume(TokenType.LEFT_PAREN, "Expected '(' after 'throwBall'")
         val target = parseExpression()
         consume(TokenType.RIGHT_PAREN, "Expected ')' after throwBall target")
-        consume(TokenType.SEMICOLON, "Expected ';' after throwBall statement.")
+        consume(TokenType.SEMICOLON, "Expected ';' after throwBall statement")
         return ThrowBallStmt(target)
     }
 
     private fun parseReturnStmt(): Stmt {
-        val keyword = tokenBuffer.previous()  // Get the already-consumed RETURN_KEYWORD token
+        val keyword = tokenBuffer.previous()
 
-        // Check if there's a value to return
         val value = if (tokenBuffer.check(TokenType.SEMICOLON)) {
-            null  // return with no value
+            null
         } else {
             parseExpression()
         }
-        
-        consume(TokenType.SEMICOLON, "Expected ';' after return statement.")
+
+        consume(TokenType.SEMICOLON, "Expected ';' after return statement")
         return ReturnStmt(keyword, value)
     }
 
@@ -129,50 +201,62 @@ class Parser(
         return PrintStmt(expr)
     }
 
-    private fun parseExprStmt(optionalSemicolon: Boolean = false): Stmt {
+    private fun parseExprStmt(): Stmt {
         val expr = parseExpression()
 
-        // In REPL mode, semicolons are optional for expression statements
-        val requireSemicolon = !replMode && !optionalSemicolon
+        if (tokenBuffer.check(TokenType.SEMICOLON)) {
+            consume(TokenType.SEMICOLON, "Expected ';' after expression")
+        }
 
-        if (requireSemicolon || tokenBuffer.check(TokenType.SEMICOLON)) {
-            consume(TokenType.SEMICOLON, "Expected ';' after expression.")
-        }
-        if (expr is VariableExpr) {
-            throw errorHandler.error(expr.identifier, "Unexpected standalone identifier '${expr.identifier.lexeme}'")
-        }
         return ExprStmt(expr)
     }
 
     private fun parseBlock(): Block {
         consume(TokenType.LEFT_BRACE, "Expected '{' at start of block")
         val stmts = mutableListOf<Stmt>()
+        var hadError = false
 
         while (!tokenBuffer.check(TokenType.RIGHT_BRACE) && !tokenBuffer.isAtEnd()) {
-            stmts.add(
-                if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
-                else parseNonIfStmt()
-            )
+            try {
+                stmts.add(
+                    if (tokenBuffer.check(TokenType.IF_KEYWORD)) parseIfStmt()
+                    else parseNonIfStmt()
+                )
+            } catch (e: ParserError) {
+                hadError = true
+                synchronize()
+                if (tokenBuffer.check(TokenType.RIGHT_BRACE)) break
+            }
         }
 
-        consume(TokenType.RIGHT_BRACE, "Expected '}' after block")
+        if (tokenBuffer.check(TokenType.RIGHT_BRACE)) {
+            consume(TokenType.RIGHT_BRACE, "Expected '}' after block")
+        } else if (!hadError) {
+            throw errorHandler.error(tokenBuffer.peek(), "Expected '}' after block")
+        }
+
         return Block(stmts)
     }
 
+
     private fun parseRunStmt(): Stmt {
-        val runToken = tokenBuffer.previous()  // Get the already-consumed RUN_KEYWORD token
+        val runToken = tokenBuffer.previous()
         context.validateRunStatement(runToken)
-        consume(TokenType.SEMICOLON, "Expected ';' after 'run' statement.")
+        consume(TokenType.SEMICOLON, "Expected ';' after 'run' statement")
         return RunStmt(runToken)
     }
 
     private fun parseExploreStmt(): Stmt {
-        val target = parseExpression()
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'explore'")
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after 'explore' (no parameters)")
+
         context.enterControlBlock()
         val block = parseBlock()
         context.exitControlBlock()
-        return ExploreStmt(target, block)
+
+        return ExploreStmt(block)
     }
+
 
     private fun parseExpression(): Expr = parseAssignExpr()
 
@@ -258,17 +342,14 @@ class Parser(
     }
 
     private fun parseUnary(): Expr {
-        val expr: Expr
-        if (tokenBuffer.match(TokenType.NOT, TokenType.MINUS)) {
+        return if (tokenBuffer.match(TokenType.NOT, TokenType.MINUS)) {
             val operator = tokenBuffer.previous()
             val right = parseUnary()
-            expr = UnaryExpr(operator, right)
+            UnaryExpr(operator, right)
         } else {
-            expr = parsePrimaryWithSuffixes()
+            parsePrimaryWithSuffixes()
         }
-        return expr
     }
-
 
     private fun parsePrimaryWithSuffixes(): Expr {
         var expr = parsePrimary()
@@ -276,7 +357,6 @@ class Parser(
             expr = when {
                 tokenBuffer.match(TokenType.DOT) -> {
                     val member = consume(TokenType.IDENTIFIER, "Expected property name after '.'")
-                    // Dot operator is for properties only - no parentheses allowed
                     if (tokenBuffer.check(TokenType.LEFT_PAREN)) {
                         throw errorHandler.error(
                             member,
@@ -288,7 +368,6 @@ class Parser(
 
                 tokenBuffer.match(TokenType.ARROW) -> {
                     val member = consume(TokenType.IDENTIFIER, "Expected method name after '->'")
-                    // Arrow operator must be followed by parentheses for method calls
                     if (!tokenBuffer.check(TokenType.LEFT_PAREN)) {
                         throw errorHandler.error(
                             member,
@@ -339,7 +418,7 @@ class Parser(
                 expr
             }
 
-            else -> throw errorHandler.error(tokenBuffer.peek(), "Expected primary expression")
+            else -> throw errorHandler.error(tokenBuffer.peek(), "Unexpected token")
         }
     }
 

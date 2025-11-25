@@ -8,9 +8,11 @@ import lexer.Token
  */
 data class RuntimeError(
     val token: Token,
-    val errorMessage: String,
-    val phase: ErrorPhase = ErrorPhase.RUNTIME
-) : RuntimeException("[line ${token.lineNumber}] ${phase.label}: $errorMessage")
+    override val message: String,
+    val hints: List<String> = emptyList(),
+    val phase: ErrorPhase = ErrorPhase.RUNTIME,
+    val pattern: String? = null
+) : RuntimeException(message)
 
 /*
  * Categories of runtime errors for better organization
@@ -32,59 +34,67 @@ class EvaluatorErrorHandler {
     private var hasEncounteredFatalError = false
 
     /*
-     * Creates and records a runtime error with formatted message
+     * Creates and records a runtime error with formatted message.
+     * Throws the error for immediate evaluation halt.
      */
     fun error(
         token: Token,
         message: String,
-        phase: ErrorPhase = ErrorPhase.RUNTIME
+        phase: ErrorPhase = ErrorPhase.RUNTIME,
+        hints: List<String> = emptyList(),
+        pattern: String? = null
     ): RuntimeError {
-        val runtimeError = RuntimeError(token, message, phase)
+        val runtimeError = RuntimeError(token, message, hints, phase, pattern)
         errors.add(runtimeError)
-        return runtimeError
+        reportSingleError(runtimeError)
+        throw runtimeError
     }
 
     /*
      * Creates a type error (e.g., "Expected number, got string")
      */
-    fun typeError(token: Token, message: String): RuntimeError {
-        return error(token, message, ErrorPhase.TYPE)
+    fun typeError(token: Token, message: String, hints: List<String> = emptyList(), pattern: String? = null): RuntimeError {
+        return error(token, message, ErrorPhase.TYPE, hints, pattern)
     }
 
     /*
      * Creates a name error (e.g., "Undefined variable 'x'")
      */
-    fun nameError(token: Token, message: String): RuntimeError {
-        return error(token, message, ErrorPhase.NAME)
+    fun nameError(token: Token, message: String, hints: List<String> = emptyList(), pattern: String? = null): RuntimeError {
+        return error(token, message, ErrorPhase.NAME, hints, pattern)
     }
 
     /*
      * Creates an argument error (e.g., "Expected 2 arguments, got 3")
      */
-    fun argumentError(token: Token, message: String): RuntimeError {
-        return error(token, message, ErrorPhase.ARGUMENT)
+    fun argumentError(token: Token, message: String, hints: List<String> = emptyList(), pattern: String? = null): RuntimeError {
+        return error(token, message, ErrorPhase.ARGUMENT, hints, pattern)
     }
 
     /*
      * Creates a property error (e.g., "Unknown property 'xyz'")
      */
-    fun propertyError(token: Token, message: String): RuntimeError {
-        return error(token, message, ErrorPhase.PROPERTY)
+    fun propertyError(token: Token, message: String, hints: List<String> = emptyList(), pattern: String? = null): RuntimeError {
+        return error(token, message, ErrorPhase.PROPERTY, hints, pattern)
     }
 
     /*
-     * Marks that a fatal error occurred (should stop evaluation)
+     * Append a hint to the most recent error that matches the token (by line and lexeme if available).
+     * If no matching error exists, create a new runtime error with the hint as a note (and optional pattern).
      */
-    fun markFatal() {
-        hasEncounteredFatalError = true
+    fun appendHintToLast(token: Token, hint: String, pattern: String? = null) {
+        val idx = errors.indexOfLast { it.token.lineNumber == token.lineNumber && it.token.lexeme == token.lexeme }
+        if (idx >= 0) {
+            val old = errors[idx]
+            val newHints = old.hints + hint
+            errors[idx] = RuntimeError(old.token, old.message, newHints, old.phase, old.pattern ?: pattern)
+        } else {
+            val primary = "Note at '${token.lexeme}'"
+            val noteError = RuntimeError(token, primary, listOf(hint), ErrorPhase.RUNTIME, pattern)
+            errors.add(noteError)
+            reportSingleError(noteError)
+        }
     }
-
-    /*
-     * Check if there are any errors
-     */
-    fun hasErrors(): Boolean = errors.isNotEmpty()
-
-
 
     /*
      * Clear all errors (useful for REPL sessions)
@@ -94,23 +104,9 @@ class EvaluatorErrorHandler {
         hasEncounteredFatalError = false
     }
 
-    /*
-     * Print all errors to console
-     */
-    fun reportErrors() {
-        errors.forEach { println(it.message) }
+
+    fun reportSingleError(err: RuntimeError) {
+        println("[line ${err.token.lineNumber}] Runtime error: ${err.message}")
     }
 
-    /*
-     * Get formatted error report
-     */
-    fun getErrorReport(): String {
-        return buildString {
-            appendLine("=== Runtime Errors (${errors.size}) ===")
-            errors.forEachIndexed { index, error ->
-                appendLine("${index + 1}. ${error.message}")
-            }
-        }
-    }
 }
-

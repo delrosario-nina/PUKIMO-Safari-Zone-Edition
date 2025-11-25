@@ -1,65 +1,66 @@
 import lexer.Scanner
 import parser.*
-import evaluator.Evaluator
-import evaluator.RuntimeError
+import evaluator.*
+import kotlin.system.exitProcess
+
 import java.util.Scanner as JavaScanner
 
-/*handles the ff:
-- buffers multi-line input until braces are balanced
-- tracks brace count
-- executes buffered code through lexer, parser, and evaluator
-- maintains environment across executions*/
-
-class ReplSession(
-    private val scanner: Scanner = Scanner(),
-    private val evaluator: Evaluator = Evaluator()
-) {
-    private val buffer = mutableListOf<String>()
+/**
+ * Manages multi-line input buffering for the REPL.
+ *
+ * Accumulates lines until braces are balanced, then returns
+ * the complete code for execution.
+ */
+class InputBuffer {
+    private val lines = mutableListOf<String>()
     private var openBraces = 0
 
-    //adds line to the buffer and updates brace count
     fun addLine(line: String) {
-        buffer.add(line)
+        lines.add(line)
         openBraces += line.count { it == '{' } - line.count { it == '}' }
     }
 
-    //checks if all braces in the buffer are balanced
-    fun isBalanced(): Boolean {
-        return openBraces == 0
-    }
+    fun isBalanced(): Boolean = openBraces == 0
 
-    //checks if there is code to execute
-    fun hasContent(): Boolean {
-        return buffer.isNotEmpty()
-    }
+    fun hasContent(): Boolean = lines.isNotEmpty()
 
-    //executes buffered code and clears the buffer
-    fun executeAndClear() {
-        if (buffer.isEmpty()) {
-            return
-        }
-
-        val code = buffer.joinToString("\n")
-        buffer.clear()
+    /**
+     * Returns all buffered lines as a single code string and clears the buffer.
+     * This is used for the evaluation step in the REPL.
+     */
+    fun consumeAndClear(): String {
+        val code = lines.joinToString("\n")
+        lines.clear()
         openBraces = 0
+        return code
+    }
+}
 
+/**
+ * Maintains persistent execution state across REPL commands.
+ *
+ * Keeps the same Evaluator instance so that variables
+ * defined in one command remain available in subsequent commands.
+ */
+class ReplExecutor {
+    private val evaluator = Evaluator()
+
+    fun execute(code: String) {
         try {
+            val scanner = Scanner()
             val tokens = scanner.scanAll(code)
-            val parser = Parser(tokens, replMode = true)  // Enable REPL mode - semicolons optional
+            val parser = Parser(tokens)
             val ast = parser.parse()
 
-            // Execute each statement
             for (stmt in ast.stmtList) {
-                evaluator.evaluate(stmt)
+                evaluator.evaluate(stmt, isReplMode = true)
             }
 
         } catch (e: RuntimeError) {
             println(e.message)
             evaluator.errorHandler.clearErrors()
-
         } catch (e: ParserError) {
             println(e.message)
-
         } catch (e: Exception) {
             println("Error: ${e.message}")
         }
@@ -71,81 +72,69 @@ fun runFile(filename: String) {
         val code = java.io.File(filename).readText()
         val scanner = Scanner()
         val tokens = scanner.scanAll(code)
-        val parser = Parser(tokens, replMode = false)  // File mode - semicolons required
+        val parser = Parser(tokens)
         val ast = parser.parse()
         val evaluator = Evaluator()
 
-        // Execute all statements
         for (stmt in ast.stmtList) {
-            evaluator.evaluate(stmt)
+            evaluator.evaluate(stmt, isReplMode = false)
         }
 
     } catch (e: java.io.FileNotFoundException) {
         println("Error: File '$filename' not found.")
-        System.exit(1)
+        e.printStackTrace()
+        exitProcess(1)
     } catch (e: RuntimeError) {
         println(e.message)
-        System.exit(1)
+        e.printStackTrace()
+        exitProcess(1)
     } catch (e: ParserError) {
         println(e.message)
-        System.exit(1)
+        e.printStackTrace()
+        exitProcess(1)
     } catch (e: Exception) {
         println("Error: ${e.message}")
         e.printStackTrace()
-        System.exit(1)
+        exitProcess(1)
     }
 }
 
 fun runRepl() {
-    val session = ReplSession()
+    val buffer = InputBuffer()
+    val executor = ReplExecutor()
     val input = JavaScanner(System.`in`)
 
     println("Pukimo REPL - Safari Zone Edition")
-    println("Enter code (type 'exit' to quit, empty line to execute when braces are balanced):")
+    println("Enter code (type 'exit' to quit):")
 
     while (true) {
-        // Show different prompt based on brace balance
-        if (session.isBalanced()) {
-            print("> ")
-        } else {
-            print("… ")
-        }
+        val prompt = if (buffer.isBalanced()) "> " else "… "
+        print(prompt)
 
         val line = input.nextLine() ?: break
 
-        val trimmed = line.trim()
-
-        // Check if user wants to exit
-        if (trimmed.lowercase() == "exit") {
-            break
-        }
-
-        // Handle empty line - execute if braces are balanced
-        if (trimmed.isEmpty()) {
-            if (session.isBalanced() && session.hasContent()) {
-                session.executeAndClear()
+        if (line.trim().lowercase() == "exit") break
+        if (line.trim().isEmpty()) {
+            if (buffer.isBalanced() && buffer.hasContent()) {
+                executor.execute(buffer.consumeAndClear())
             }
             continue
         }
 
-        // Add line to buffer
-        session.addLine(line)
+        buffer.addLine(line)
 
-        // Auto-execute when braces are balanced
-        if (session.isBalanced() && session.hasContent()) {
-            session.executeAndClear()
+        if (buffer.isBalanced() && buffer.hasContent()) {
+            executor.execute(buffer.consumeAndClear())
         }
     }
 }
 
-//$files = Get-ChildItem -Path src -Filter *.kt -Recurse | ForEach-Object { $_.FullName }
-//kotlinc @files -include-runtime -d PukiMO.jar
-//kotlin -cp PukiMO.jar MainKt simple.txt
+//kotlinc @sources.txt -include-runtime -d PukiMo.jar
+//java -jar PukiMo.jar team.txt
 fun main(args: Array<String>) {
     if (args.isNotEmpty()) {
         runFile(args[0])
     } else {
-        // REPL mode - interactive prompt
         runRepl()
     }
 }

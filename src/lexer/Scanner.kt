@@ -4,11 +4,6 @@ class Scanner {
 
     private var lineNumber: Int = 1
 
-    // Check if a symbol belongs to a TokenType
-    fun TokenType.contains(symbol: String): Boolean {
-        return symbols?.contains(symbol) ?: false
-    }
-
     // classifyWord handles keywords, literals, and identifiers
     fun classifyWord(word: String): Pair<TokenType, Any?> {
         return when (word) {
@@ -39,19 +34,10 @@ class Scanner {
             // Default cases
             // --------------------
             else -> {
-                when {
-                    // Numeric literal detection
-                    word.matches(Regex("""\d+""")) ->
-                        TokenType.NUMERIC_LITERAL to word.toInt()
-
-
-                    // String literal detection
-                    word.matches(Regex(""""([^"\\]|\\.)*"""")) ||
-                            word.matches(Regex("""'([^'\\]|\\.)*'""")) ->
-                        TokenType.STRING_LITERAL to word.substring(1, word.length - 1)
-
-                    // Otherwise, identifier
-                    else -> TokenType.IDENTIFIER to null
+                if (word.matches(Regex("""\d+"""))) {
+                    TokenType.NUMERIC_LITERAL to word.toInt()
+                } else {
+                    TokenType.IDENTIFIER to null
                 }
             }
         }
@@ -66,16 +52,15 @@ class Scanner {
         while (index < source.length && (source[index].isLetterOrDigit() || source[index] == '_')) index++
         val lexeme = source.substring(start, index)
         val (type, literal) = classifyWord(lexeme)
-        return Token(type, lexeme, literal, this.lineNumber) to index
+        return Token(type, lexeme, literal, lineNumber) to index
     }
 
     fun scanNumber(source: String, start: Int): Pair<Token, Int> {
         var index = start
-        while (index < source.length && (source[index].isDigit() || source[index] == '.')) index++
+        while (index < source.length && source[index].isDigit()) index++
         val lexeme = source.substring(start, index)
-        val literal = lexeme.toIntOrNull()
-            ?: throw IllegalArgumentException("Invalid number '$lexeme' at line $lineNumber")
-        return Token(TokenType.NUMERIC_LITERAL, lexeme, literal, this.lineNumber) to index
+        val literal = lexeme.toInt()  // Safe now - only contains digits
+        return Token(TokenType.NUMERIC_LITERAL, lexeme, literal, lineNumber) to index
     }
 
     fun scanString(source: String, start: Int): Pair<Token, Int> {
@@ -176,6 +161,7 @@ class Scanner {
      */
     fun scanAll(source: String): List<Token> {
         val tokens = mutableListOf<Token>()
+        lineNumber = 1
         var index = 0
 
         while (index < source.length) {
