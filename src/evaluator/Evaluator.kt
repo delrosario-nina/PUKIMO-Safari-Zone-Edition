@@ -24,6 +24,18 @@ class PokemonCollection(
     private val ownerType: String = "Collection"
 ) : SafariZoneObjectInterface {
 
+    // Direct Kotlin methods for internal use
+    fun isEmpty(): Boolean = pokemonList.isEmpty()
+
+    fun remove(item: String): Boolean = pokemonList.remove(item)
+
+    fun random(errorHandler: EvaluatorErrorHandler, token: Token): String {
+        if (pokemonList.isEmpty()) {
+            throw errorHandler.error(token, "$ownerType has no Pokemon.")
+        }
+        return pokemonList.random()
+    }
+
     private val methodList: Map<String, (List<Any?>, EvaluatorErrorHandler, Token) -> Any?> = mapOf(
         "add" to { args, errorHandler, token ->
             val item = requireStringArg(args, errorHandler, token, "add")
@@ -32,7 +44,7 @@ class PokemonCollection(
         },
         "remove" to { args, errorHandler, token ->
             val item = requireStringArg(args, errorHandler, token, "remove")
-            pokemonList.remove(item)
+            remove(item)
         },
         "list" to { _, _, _ ->
             pokemonList.joinToString(", ")
@@ -43,10 +55,7 @@ class PokemonCollection(
             found ?: "null"
         },
         "random" to { _, errorHandler, token ->
-            if (pokemonList.isEmpty()) {
-                throw errorHandler.error(token, "$ownerType has no Pokemon.")
-            }
-            pokemonList.random()
+            random(errorHandler, token)
         },
         "count" to { _, _, _ ->
             pokemonList.size
@@ -56,7 +65,7 @@ class PokemonCollection(
             null
         },
         "isEmpty" to { _, _, _ ->
-            pokemonList.isEmpty()
+            isEmpty()
         }
     )
 
@@ -94,7 +103,6 @@ class PokemonCollection(
     }
 
     override fun toString(): String = pokemonList.joinToString(", ")
-
     override fun getTypeName(): String = "PokemonCollection"
 
     override fun getProperty(name: String, errorHandler: EvaluatorErrorHandler, token: Token): Any? {
@@ -111,6 +119,8 @@ class PokemonCollection(
         )
     }
 }
+
+
 
 /**
  * SafariZoneObject - Represents a Safari Zone area in the Pokemon game.
@@ -474,31 +484,51 @@ class Evaluator : AstVisitor<Any?> {
      * If statements are not yet implemented.
      */
     override fun visitIfStmt(stmt: IfStmt): Any? {
-        throw errorHandler.error(
-            Token(TokenType.IF_KEYWORD, "if", null, 0),
-            "If statements are not yet implemented."
-        )
+        val condition = stmt.expression.accept(this)
+
+        return if (isTruthy(condition)) {
+            stmt.thenBlock.accept(this)
+        } else if (stmt.elseBlock != null) {
+            stmt.elseBlock.accept(this)
+        } else {
+            null
+        }
     }
+
 
     /**
      * User-defined functions are not yet implemented.
      */
     override fun visitDefineStmt(stmt: DefineStmt): Any? {
-        throw errorHandler.error(
-            stmt.name,
-            "User-defined functions are not yet implemented."
+        // Create a function object that captures the current environment
+        val function = FunctionObject(
+            name = stmt.name,
+            parameters = stmt.paramList,
+            body = stmt.block,
+            closure = environment  // Capture closure at definition time
         )
+
+        // Store the function in the environment
+        environment.define(stmt.name, function)
+        return null
     }
+
 
     /**
      * Explore statements are not yet implemented.
      */
     override fun visitExploreStmt(stmt: ExploreStmt): Any? {
-        throw errorHandler.error(
-            Token(TokenType.EXPLORE_KEYWORD, "explore", null, 0),
-            "Explore statements are not yet implemented."
-        )
+        // Infinite loop until run statement is called
+        while (true) {
+            try {
+                stmt.block.accept(this)
+            } catch (e: RunException) {
+                break  // run statement was executed
+            }
+        }
+        return null
     }
+
 
     /**
      * Executes a throw ball statement (Safari Zone specific).
@@ -510,17 +540,46 @@ class Evaluator : AstVisitor<Any?> {
      * @return The value of the expression
      */
     override fun visitThrowBallStmt(stmt: ThrowBallStmt): Any? {
-        return stmt.expression.accept(this)
+        val target = stmt.expression.accept(this)
+
+        if (target !is SafariZoneObjectInterface) {
+            throw errorHandler.typeError(
+                Token(TokenType.THROWBALL_KEYWORD, "throwBall", null, 0),
+                "throwBall target must be a SafariZone object"
+            )
+        }
+
+        // Get the pokemon collection
+        val pokemonCollection = target.getProperty("pokemon", errorHandler,
+            Token(TokenType.IDENTIFIER, "pokemon", null, 0)) as PokemonCollection
+
+        // Check if empty using direct method
+        if (pokemonCollection.isEmpty()) {
+            throw errorHandler.error(
+                Token(TokenType.THROWBALL_KEYWORD, "throwBall", null, 0),
+                "No Pokemon in this Safari Zone!"
+            )
+        }
+
+        // Catch a random Pokemon
+        val caught = pokemonCollection.random(errorHandler,
+            Token(TokenType.THROWBALL_KEYWORD, "throwBall", null, 0)) as String
+
+        // Remove it from the zone
+        pokemonCollection.remove(caught)
+
+        println("Caught a $caught!")
+        return caught
     }
+
+
 
     /**
      * Return statements are not yet implemented.
      */
     override fun visitReturnStmt(stmt: ReturnStmt): Any? {
-        throw errorHandler.error(
-            stmt.keyword,
-            "Return statements are not yet implemented."
-        )
+        val value = stmt.value?.accept(this)
+        throw ReturnException(value)
     }
 
     /**
@@ -531,9 +590,9 @@ class Evaluator : AstVisitor<Any?> {
      * @return null
      */
     override fun visitRunStmt(stmt: RunStmt): Any? {
-        // In a real interpreter, this would continue a loop
-        return null
+        throw RunException()
     }
+
 
     /**
      * Evaluates a literal expression (constant value).
@@ -632,11 +691,25 @@ class Evaluator : AstVisitor<Any?> {
      * @throws RuntimeError if operand types are invalid for the operator
      */
     override fun visitBinaryExpr(node: BinaryExpr): Any? {
+        // Handle short-circuit operators BEFORE evaluating both sides
+        if (node.operator.type == TokenType.AND) {
+            val left = node.left.accept(this)
+            if (!isTruthy(left)) return false
+            return isTruthy(node.right.accept(this))
+        }
+
+        if (node.operator.type == TokenType.OR) {
+            val left = node.left.accept(this)
+            if (isTruthy(left)) return true
+            return isTruthy(node.right.accept(this))
+        }
+
+        // All other operators evaluate both sides
         val left = node.left.accept(this)
         val right = node.right.accept(this)
-
         return arithmeticEvaluator.evaluate(left, node.operator, right)
     }
+
 
     /**
      * Evaluates an assignment expression.
@@ -721,54 +794,42 @@ class Evaluator : AstVisitor<Any?> {
      * @throws RuntimeError if function doesn't exist or arguments are invalid
      */
     override fun visitCallExpr(expr: CallExpr): Any? {
-        // Handle method calls on objects FIRST (before evaluating callee)
-        // This prevents treating methods as properties
+        // Handle method calls on objects (existing logic)
         if (expr.callee is PropertyAccessExpr) {
             val propertyExpr = expr.callee
             val obj = propertyExpr.primaryWithSuffixes.accept(this)
             val methodName = propertyExpr.identifier.lexeme
-
-            // Evaluate arguments
             val arguments = expr.args.map { it.accept(this) }
 
-            // Use the SafariZoneObjectInterface for unified method calling
-            when (obj) {
-                is SafariZoneObjectInterface -> {
-                    return obj.callMethod(methodName, arguments, errorHandler, propertyExpr.identifier)
-                }
-
-                else -> {
-                    // Attach a helpful hint suggesting the user may have used '.' instead of '->'
-                    errorHandler.appendHintToLast(propertyExpr.identifier, "Did you mean to call a method with '->' (e.g. obj->${methodName}())?")
-                    throw errorHandler.typeError(
-                        propertyExpr.identifier,
-                        "Cannot call method on non-object type."
-                    )
-                }
+            if (obj is SafariZoneObjectInterface) {
+                return obj.callMethod(methodName, arguments, errorHandler, propertyExpr.identifier)
             }
+
+            throw errorHandler.typeError(
+                propertyExpr.identifier,
+                "Cannot call method on non-object type."
+            )
         }
 
         // Evaluate arguments
         val arguments = expr.args.map { it.accept(this) }
 
-
         // Handle built-in constructors
-        // Try built-in constructors first
         if (expr.callee is VariableExpr) {
             val calleeVar = expr.callee as VariableExpr
             val funcName = calleeVar.identifier.lexeme
 
             val builtinObject = safariZoneObjects.tryCreate(
-                funcName,
-                arguments,
-                expr.namedArgs,
-                calleeVar.identifier
+                funcName, arguments, expr.namedArgs, calleeVar.identifier
             )
 
+            if (builtinObject != null) return builtinObject
+        }
 
-            if (builtinObject != null) {
-                return builtinObject
-            }
+        // Handle user-defined functions
+        val function = expr.callee.accept(this)
+        if (function is FunctionObject) {
+            return callUserFunction(function, arguments)
         }
 
         throw errorHandler.error(
@@ -776,6 +837,46 @@ class Evaluator : AstVisitor<Any?> {
             "Unknown function or not implemented."
         )
     }
+
+    private fun callUserFunction(
+        function: FunctionObject,
+        arguments: List<Any?>
+    ): Any? {
+        // Arity checking
+        if (arguments.size != function.parameters.size) {
+            throw errorHandler.error(
+                function.name,
+                "Expected ${function.parameters.size} arguments but got ${arguments.size}."
+            )
+        }
+
+        val previous = environment
+        try {
+            // Create environment with closure as parent (not current environment)
+            environment = Environment(enclosing = function.closure)
+
+            // Bind parameters to arguments
+            for ((param, arg) in function.parameters.zip(arguments)) {
+                environment.define(param, arg)
+            }
+
+            // Execute body, catching return statements
+            try {
+                function.body.accept(this)
+                return null  // Implicit return
+            } catch (e: ReturnException) {
+                return e.value  // Explicit return value
+            }
+        } finally {
+            environment = previous  // Restore caller's environment
+        }
+    }
+
+    override fun visitFunctionCall(function: FunctionObject, arguments: List<Any?>): Any? {
+        return callUserFunction(function, arguments)
+    }
+
+
 
     /**
      * Evaluates a property access expression.

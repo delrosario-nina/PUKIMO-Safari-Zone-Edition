@@ -1,6 +1,7 @@
 package parser
 
 import lexer.Token
+import evaluator.Environment
 
 sealed class AstNode {
     abstract fun <R> accept(visitor: AstVisitor<R>): R
@@ -73,3 +74,10 @@ data class CallExpr(val callee: Expr, val args: List<Expr>, val namedArgs: List<
 data class PropertyAccessExpr(val primaryWithSuffixes: Expr, val identifier: Token) : Expr() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitPropertyAccessExpr(this)
 }
+
+data class FunctionObject(
+    val name: Token,
+    val parameters: List<Token>,
+    val body: Block,
+    val closure: Environment  // Captures environment where function was defined
+)

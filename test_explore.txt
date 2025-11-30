@@ -1,0 +1,7 @@
+var balls = 12;
+explore() {
+    if (balls <= 0) {run;}
+    print ("Throwing ball...");
+    balls = balls - 1;
+}
+print ("Done");

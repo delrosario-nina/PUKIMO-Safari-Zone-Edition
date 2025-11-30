@@ -1,31 +1,6 @@
-var greeting = "Hello";
-var name = "World";
-print(greeting + ", " + name + "!");
-
-var x = 10;
-var y = 20;
-print("x = " + x);
-print("y = " + y);
-
-x = x + y;
-print("x + y = " + x);
-
-var a = 100;
-var b = 25;
-print("a + b = " + (a + b));
-print("a - b = " + (a - b));
-print("a * b = " + (a * b));
-print("a / b = " + (a / b));
-print("a % b = " + (a % b));
-
-var isGreater = a > b;
-print("a > b: " + isGreater);
-
-var bothTrue = true && false;
-print("true && false: " + bothTrue);
-
-var eitherTrue = false || true;
-print("false || true: " + eitherTrue);
-
-print("Done!");
-
+var x = 5;
+{
+var x = 2;
+print(x);
+}
+print(x);

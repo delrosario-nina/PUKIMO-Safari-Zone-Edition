@@ -1,0 +1,13 @@
+// Test arity error
+fun add(a, b) {
+    return a + b;
+}
+
+print add(5);  // Should error: Expected 2 arguments but got 1
+
+// Test type error
+fun double(n) {
+    return n * 2;
+}
+
+print double("hello");  // Should error: Operand must be a number

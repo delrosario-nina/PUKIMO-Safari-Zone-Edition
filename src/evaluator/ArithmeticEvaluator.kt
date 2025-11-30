@@ -30,8 +30,15 @@ class ArithmeticEvaluator(private val errorHandler: EvaluatorErrorHandler) {
             TokenType.NOT_EQUAL -> !evaluateEqual(left, right)
 
             // Logical
-            TokenType.AND -> evaluateAnd(left, right, operator)
-            TokenType.OR -> evaluateOr(left, right, operator)
+            TokenType.AND -> {
+                if (!isTruthy(left)) return false  // Short-circuit: don't evaluate right
+                return isTruthy(right)
+            }
+
+            TokenType.OR -> {
+                if (isTruthy(left)) return true    // Short-circuit: don't evaluate right
+                return isTruthy(right)
+            }
 
             else -> throw errorHandler.error(operator, "Unknown binary operator: ${operator.lexeme}")
         }
@@ -174,6 +181,12 @@ class ArithmeticEvaluator(private val errorHandler: EvaluatorErrorHandler) {
     }
 
     // ==================== Helper Methods ====================
+
+    private fun isTruthy(value: Any?): Boolean {
+        if (value == null) return false
+        if (value is Boolean) return value
+        return true
+    }
 
     private fun stringify(value: Any?): String {
         return when (value) {

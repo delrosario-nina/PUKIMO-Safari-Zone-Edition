@@ -20,4 +20,5 @@ interface AstVisitor<R> {
     fun visitAssignExpr(node: AssignExpr): R
     fun visitCallExpr(node: CallExpr): R
     fun visitPropertyAccessExpr(node: PropertyAccessExpr): R
+    fun visitFunctionCall(function: FunctionObject, arguments: List<Any?>): R
 }

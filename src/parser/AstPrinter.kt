@@ -89,6 +89,19 @@ class AstPrinter : AstVisitor<String> {
         }
     }
 
+    override fun visitFunctionCall(function: FunctionObject, arguments: List<Any?>): String {
+        val funcName = function.name.lexeme
+        val argsStr = arguments.joinToString(", ") {
+            when (it) {
+                is String -> "\"$it\""
+                null -> "null"
+                else -> it.toString()
+            }
+        }
+        return "(call-function $funcName with args: $argsStr)"
+    }
+
+
     private fun parenthesize(name: String, vararg exprs: Expr): String {
         val builder = StringBuilder()
         builder.append("(").append(name)
@@ -99,3 +112,5 @@ class AstPrinter : AstVisitor<String> {
         return builder.toString()
     }
 }
+
+
