@@ -1,6 +1,6 @@
 package parser
 
-import lexer.Token
+import lexer.*
 import evaluator.Environment
 
 sealed class AstNode {
@@ -32,15 +32,19 @@ data class Block(val stmtList: List<Stmt>) : Stmt() {
 data class RunStmt(val token: Token) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitRunStmt(this)
 }
-data class ExploreStmt(val block: Block) : Stmt() {
+data class ExploreStmt(val safariZoneVar: Token, val block: Block) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitExploreStmt(this)
 }
-data class DefineStmt(val name: Token, val paramList: List<Token>, val block: Block) : Stmt() {
+data class Parameter(val name: Token, val type: Type)
+
+data class DefineStmt(
+    val name: Token,
+    val paramList: List<Parameter>, // Use Parameter(name:Token, type:Type)
+    val block: Block
+) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitDefineStmt(this)
 }
-data class ThrowBallStmt(val expression: Expr) : Stmt() {
-    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitThrowBallStmt(this)
-}
+
 data class ReturnStmt(val keyword: Token, val value: Expr?) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitReturnStmt(this)
 }
@@ -77,7 +81,7 @@ data class PropertyAccessExpr(val primaryWithSuffixes: Expr, val identifier: Tok
 
 data class FunctionObject(
     val name: Token,
-    val parameters: List<Token>,
+    val parameters: List<Parameter>,
     val body: Block,
     val closure: Environment  // Captures environment where function was defined
 )

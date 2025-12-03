@@ -11,7 +11,6 @@ enum class TokenType(val symbols: Set<String>? = null) {
         DEFINE_KEYWORD(setOf("define")),
         RETURN_KEYWORD(setOf("return")),
         PRINT_KEYWORD(setOf("print")),
-        THROWBALL_KEYWORD(setOf("throwBall")),
         CONST_KEYWORD(setOf("const")),
         SAFARI_ZONE(setOf("SafariZone")),
         TEAM(setOf("Team")),
@@ -54,6 +53,17 @@ enum class TokenType(val symbols: Set<String>? = null) {
         DOT(setOf(".")),
         SEMICOLON(setOf(";")),
         ARROW(setOf("->")),
-
+    COLON(setOf(":")),
         EOF
+}
+// Add this!!
+enum class Type {
+    INT,
+    DOUBLE,
+    STRING,
+    BOOL,
+    SAFARIZONE,
+    TEAM,
+    OBJECT,
+    POKEMON
 }

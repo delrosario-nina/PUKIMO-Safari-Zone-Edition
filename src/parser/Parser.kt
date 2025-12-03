@@ -95,7 +95,6 @@ class Parser(
             TokenType.PRINT_KEYWORD,
             TokenType.RUN_KEYWORD,
             TokenType.EXPLORE_KEYWORD,
-            TokenType.THROWBALL_KEYWORD,
             TokenType.RETURN_KEYWORD -> true
             else -> false
         }
@@ -107,7 +106,6 @@ class Parser(
             tokenBuffer.match(TokenType.PRINT_KEYWORD) -> parsePrintStmt()
             tokenBuffer.match(TokenType.RUN_KEYWORD) -> parseRunStmt()
             tokenBuffer.match(TokenType.EXPLORE_KEYWORD) -> parseExploreStmt()
-            tokenBuffer.match(TokenType.THROWBALL_KEYWORD) -> parseThrowBallStmt()
             tokenBuffer.match(TokenType.RETURN_KEYWORD) -> parseReturnStmt()
             tokenBuffer.match(TokenType.DEFINE_KEYWORD) -> parseDefineStmt()
             tokenBuffer.check(TokenType.LEFT_BRACE) -> parseBlock()
@@ -144,7 +142,9 @@ class Parser(
 
     private fun parseVarDeclStmt(): Stmt {
         val identifier = consume(TokenType.IDENTIFIER, "Expected variable name")
-
+        if (identifier.lexeme == "encounter") {
+            throw errorHandler.error(identifier, "'encounter' is a reserved keyword and cannot be declared as a variable.")
+        }
         val expr = if (tokenBuffer.match(TokenType.ASSIGN)) {
             parseExpression()
         } else {
@@ -159,25 +159,40 @@ class Parser(
         val name = consume(TokenType.IDENTIFIER, "Expected function name after 'define'")
 
         consume(TokenType.LEFT_PAREN, "Expected '(' after function name")
-        val params = mutableListOf<Token>()
-            if (!tokenBuffer.check(TokenType.RIGHT_PAREN)) {
-                do {
-                    params.add(consume(TokenType.IDENTIFIER, "Expected parameter name"))
-                } while (tokenBuffer.match(TokenType.COMMA))
-            }
-            consume(TokenType.RIGHT_PAREN, "Expected ')' after function parameters")
+        val params = mutableListOf<Parameter>()
+        if (!tokenBuffer.check(TokenType.RIGHT_PAREN)) {
+            do {
+                val paramName = consume(TokenType.IDENTIFIER, "Expected parameter name")
 
+                // Parse colon and type (e.g. a: int)
+                consume(TokenType.COLON, "Expected ':' after parameter name")
+                val typeToken = consume(TokenType.IDENTIFIER, "Expected type name after ':'")
+
+                // Convert type string to Type enum
+                val type = parseType(typeToken)
+
+                params.add(Parameter(paramName, type))
+            } while (tokenBuffer.match(TokenType.COMMA))
+        }
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after function parameters")
 
         val body = parseBlock()
         return DefineStmt(name, params, body)
     }
 
-    private fun parseThrowBallStmt(): Stmt {
-        consume(TokenType.LEFT_PAREN, "Expected '(' after 'throwBall'")
-        val target = parseExpression()
-        consume(TokenType.RIGHT_PAREN, "Expected ')' after throwBall target")
-        consume(TokenType.SEMICOLON, "Expected ';' after throwBall statement")
-        return ThrowBallStmt(target)
+    // Utility to map type name string to Type enum
+    private fun parseType(typeToken: Token): Type {
+        return when (typeToken.lexeme.lowercase()) {
+            "int"    -> Type.INT
+            "double" -> Type.DOUBLE
+            "string" -> Type.STRING
+            "bool"   -> Type.BOOL
+            "safarizone" -> Type.SAFARIZONE
+            "team"   -> Type.TEAM
+            "object" -> Type.OBJECT
+            "pokemon"-> Type.POKEMON
+            else     -> throw errorHandler.error(typeToken, "Unknown parameter type: ${typeToken.lexeme}")
+        }
     }
 
     private fun parseReturnStmt(): Stmt {
@@ -248,13 +263,18 @@ class Parser(
 
     private fun parseExploreStmt(): Stmt {
         consume(TokenType.LEFT_PAREN, "Expected '(' after 'explore'")
-        consume(TokenType.RIGHT_PAREN, "Expected ')' after 'explore' (no parameters)")
+
+        // Expect an identifier for the SafariZone variable
+        val safariZoneIdent = consume(TokenType.IDENTIFIER, "Expected SafariZone variable name in 'explore'")
+
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after SafariZone variable name in 'explore'")
 
         context.enterControlBlock()
         val block = parseBlock()
         context.exitControlBlock()
 
-        return ExploreStmt(block)
+        // Adjust your AST class: ExploreStmt(Token, Block) or similar
+        return ExploreStmt(safariZoneIdent, block)
     }
 
 
@@ -267,10 +287,11 @@ class Parser(
             val equals = tokenBuffer.previous()
             val value = parseAssignExpr()
 
-            if (expr is VariableExpr || expr is PropertyAccessExpr) {
+            if (expr is VariableExpr) {
+                if (expr.identifier.lexeme == "encounter") {
+                    throw errorHandler.error(expr.identifier, "'encounter' is read-only and cannot be assigned.")
+                }
                 return AssignExpr(expr, equals, value)
-            } else {
-                throw errorHandler.error(equals, "Invalid assignment target")
             }
         }
         return expr

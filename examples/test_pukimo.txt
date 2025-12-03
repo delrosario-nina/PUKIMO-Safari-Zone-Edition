@@ -1,0 +1,74 @@
+:> PukiMO Non-Trivial Demo Program
+:> Demonstrates: user-defined functions, recursion, closures, objects, collections, control flow, loops, native I/O, and SafariZone gameplay.
+
+:> ---- Team Builder & Safari Adventure Program ----
+
+:> Ask user for trainer name and number of pokeballs/turns
+print("Welcome to Safari Zone!");
+print("Enter your trainer name:");
+var trainer = readString();
+print("How many Safari Balls?");
+var balls = readInt();
+if (balls == null || balls < 1) {
+    print("Defaulting to 5 Safari Balls.");
+    balls = 5;
+}
+print("How many turns?");
+var turns = readInt();
+if (turns == null || turns < 1) {
+    print("Defaulting to 5 turns.");
+    turns = 5;
+}
+
+:> Create SafariZone and Team
+var zone = SafariZone(balls=balls, turns=turns);
+var team = Team(trainer);
+
+:> Add a set of starter Pokemon to SafariZone
+zone.pokemon->add("Bulbasaur");
+zone.pokemon->add("Charmander");
+zone.pokemon->add("Squirtle");
+zone.pokemon->add("Pikachu");
+zone.pokemon->add("Eevee");
+zone.pokemon->add("Jigglypuff");
+zone.pokemon->add("Mew");
+
+:> Function to check if a Pokémon is legendary (closure + custom logic)
+define isLegendary(name: string) {
+    return name == "Mew";
+}
+
+:> Function to attempt catch and add to team if successful
+define encounterLogic() {
+    print("Wild " + encounter + " appeared!");
+    if (isLegendary(encounter)) {
+        print("It's legendary! Try your luck...");
+    }
+    var caught = zone.pokemon->attemptCatch(encounter, zone);
+    if (caught) {
+        print("You caught " + encounter + "!");
+        team.pokemon->add(encounter);
+        if (team.pokemon->count() == team.maxSize) {
+            print("Your team is full!");
+            run;
+        }
+    } else {
+        print(encounter + " escaped!");
+    }
+}
+
+:> Explore loop -- adventure run!
+explore(zone) {
+    encounterLogic();
+}
+
+:> Print summary
+print("Safari adventure ended!");
+print("Trainer: " + team.trainerName);
+print("Your team: " + team.pokemon->list());
+print("Safari balls left: " + zone.balls);
+print("Turns left: " + zone.turns);
+
+
+
+print("Object property: " + team.trainerName + " (" + length(team.trainerName) + ")");

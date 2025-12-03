@@ -11,7 +11,6 @@ interface AstVisitor<R> {
     fun visitRunStmt(node: RunStmt): R
     fun visitExploreStmt(node: ExploreStmt): R
     fun visitDefineStmt(node: DefineStmt): R
-    fun visitThrowBallStmt(node: ThrowBallStmt): R
     fun visitReturnStmt(node: ReturnStmt): R
     fun visitBinaryExpr(node: BinaryExpr): R
     fun visitUnaryExpr(node: UnaryExpr): R

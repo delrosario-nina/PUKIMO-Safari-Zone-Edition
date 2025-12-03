@@ -14,7 +14,7 @@ class AstPrinter : AstVisitor<String> {
         "(var ${node.identifier.lexeme} = ${node.expression.accept(this)})"
 
     override fun visitDefineStmt(node: DefineStmt): String {
-        val params = node.paramList.joinToString(", ") { it.lexeme }
+        val params = node.paramList.joinToString(", ") { "${it.name.lexeme}: ${it.type.name.lowercase()}" }
         return "(define ${node.name.lexeme}($params) ${node.block.accept(this)})"
     }
 
@@ -39,9 +39,6 @@ class AstPrinter : AstVisitor<String> {
 
     override fun visitExploreStmt(node: ExploreStmt): String =
         "(explore  ${node.block.accept(this)})"
-
-    override fun visitThrowBallStmt(node: ThrowBallStmt): String =
-        "(throwBall ${node.expression.accept(this)})"
 
     override fun visitReturnStmt(node: ReturnStmt): String =
         if (node.value != null) "(return ${node.value.accept(this)})" else "(return)"
