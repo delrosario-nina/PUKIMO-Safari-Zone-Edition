@@ -1,0 +1,59 @@
+:> PukiMO User-Defined Function Feature Test Suite
+
+:> --- Simple function definition and call ---
+define greet(name) {
+    print("Hello, " + name + "!");
+}
+greet("PukiMO");
+
+:> --- Function returning a value ---
+define double(x) {
+    return x * 2;
+}
+print(double(5));
+
+:> --- Function with multiple arguments ---
+define concat(a, b, c) {
+    return a + b + c;
+}
+print(concat("Puki", "MO", "!"));
+
+:> --- Function used in an expression ---
+define add(a, b) {
+    return a + b;
+}
+var result = add(3, 4) * 2;
+print(result);
+
+:> --- Nested function calls ---
+define triple(x) {
+    return double(x) + x;
+}
+print(triple(5));
+
+:> --- Function as argument to another function ---
+define shout(msg) {
+    print(msg + "!");
+}
+shout(greet("World"));
+
+:> --- Function calling itself (recursion) ---
+define countdown(n) {
+    if (n <= 0) {
+        print("Blastoff");
+        return;
+    }
+    print(n);
+    countdown(n - 1);
+}
+countdown(5);
+
+:> --- Function closure test ---
+define makeMultiplier(factor) {
+    define mult(x) {
+        return x * factor;
+    }
+    return mult;
+}
+var timesThree = makeMultiplier(3);
+print(timesThree(7));

@@ -1,0 +1,56 @@
+// Setup game
+fun setupSafariZone() {
+    var zone = SafariZone(10, 20);
+    zone.pokemon->add("Pikachu");
+    zone.pokemon->add("Charizard");
+    zone.pokemon->add("Bulbasaur");
+    zone.pokemon->add("Squirtle");
+    zone.pokemon->add("Eevee");
+    zone.pokemon->add("Snorlax");
+    zone.pokemon->add("Mewtwo");
+    zone.pokemon->add("Dragonite");
+    zone.pokemon->add("Gengar");
+    zone.pokemon->add("Gyarados");
+    return zone;
+}
+
+fun playSafari(zone, playerName) {
+    print "=== " + playerName + "'s Safari Adventure ===";
+    var team = Team(playerName);
+
+    explore() {
+        if (zone->isGameOver()) {
+            print "Game over! Out of balls or turns.";
+            run;
+        }
+
+        print "Balls: " + zone.balls + " | Turns: " + zone.turns;
+        print "Pokemon available: " + zone.pokemon->count();
+
+        // Decide whether to stay or leave
+        var stay = true;  // In a real game, this would be player input
+
+        if (!stay) {
+            print playerName + " decided to leave the Safari Zone.";
+            run;
+        }
+
+        // Try to catch Pokemon
+        var pokemon = throwBall(zone);
+        team.pokemon->add(pokemon);
+        zone->useTurn();
+
+        print playerName + " caught " + pokemon + "!";
+        print playerName + "'s team: " + team.pokemon->list();
+        print "";
+    }
+
+    print "=== Final Results for " + playerName + " ===";
+    print "Team: " + team.pokemon->list();
+    print "Total caught: " + team.pokemon->count();
+    return team;
+}
+
+// Play the game
+var safariZone = setupSafariZone();
+var playerTeam = playSafari(safariZone, "Ash");

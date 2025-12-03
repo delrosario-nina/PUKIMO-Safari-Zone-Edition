@@ -1,0 +1,170 @@
+print("=== Integration Test: Complete Safari Zone Adventure ===");
+print("");
+
+print("--- Setup: Creating Safari Zone and Team ---");
+var myZone = SafariZone(30, 500);
+var myTeam = Team("Ash", 6);
+print("Safari Zone: " + myZone);
+print("Team: " + myTeam);
+print("");
+
+print("--- Populating Safari Zone ---");
+myZone.pokemon->add("Pikachu");
+myZone.pokemon->add("Charmander");
+myZone.pokemon->add("Bulbasaur");
+myZone.pokemon->add("Squirtle");
+myZone.pokemon->add("Pidgey");
+myZone.pokemon->add("Rattata");
+myZone.pokemon->add("Caterpie");
+myZone.pokemon->add("Weedle");
+print("Zone population: " + myZone.pokemon->count() + " Pokemon");
+print("Available Pokemon: " + myZone.pokemon->list());
+print("");
+
+print("--- Adventure Begin! ---");
+print("Resources: " + myZone.balls + " balls, " + myZone.turns + " turns");
+var encounter1 = myZone.pokemon->random();
+print("Encounter 1: A wild " + encounter1 + " appeared!");
+myZone->useBall();
+myZone->useTurn();
+myTeam.pokemon->add(encounter1);
+print("Caught " + encounter1 + "!");
+print("Resources: " + myZone.balls + " balls, " + myZone.turns + " turns");
+print("");
+
+var encounter2 = myZone.pokemon->random();
+print("Encounter 2: A wild " + encounter2 + " appeared!");
+myZone->useBall();
+myZone->useTurn();
+myTeam.pokemon->add(encounter2);
+print("Caught " + encounter2 + "!");
+print("Resources: " + myZone.balls + " balls, " + myZone.turns + " turns");
+print("");
+
+var encounter3 = myZone.pokemon->random();
+print("Encounter 3: A wild " + encounter3 + " appeared!");
+myZone->useBall();
+myZone->useTurn();
+myTeam.pokemon->add(encounter3);
+print("Caught " + encounter3 + "!");
+print("Resources: " + myZone.balls + " balls, " + myZone.turns + " turns");
+print("");
+
+print("--- Team Status ---");
+print("Current team: " + myTeam.pokemon->list());
+print("Team size: " + myTeam.pokemon->count() + " / " + myTeam.maxSize);
+var isTeamFull = myTeam->isFull();
+print("Team full? " + isTeamFull);
+var isTeamEmpty = myTeam->isEmpty();
+print("Team empty? " + isTeamEmpty);
+print("");
+
+print("--- Checking Team Members ---");
+var hasPikachu = myTeam->has("Pikachu");
+print("Has Pikachu? " + hasPikachu);
+var hasCharizard = myTeam->has("Charizard");
+print("Has Charizard? " + hasCharizard);
+print("");
+
+print("--- Resource Management ---");
+var turnsUsed = myZone.initialTurns - myZone.turns;
+var ballsUsed = myZone.initialBalls - myZone.balls;
+print("Turns used: " + turnsUsed + " / " + myZone.initialTurns);
+print("Balls used: " + ballsUsed + " / " + myZone.initialBalls);
+var turnsLeft = myZone.turns;
+var ballsLeft = myZone.balls;
+print("Turns remaining: " + turnsLeft);
+print("Balls remaining: " + ballsLeft);
+print("");
+
+print("--- Continuing Adventure ---");
+var catchCount = 3;
+print("Attempting to catch 2 more Pokemon...");
+
+var encounter4 = myZone.pokemon->random();
+print("Encounter 4: A wild " + encounter4 + " appeared!");
+myZone->useBall();
+myZone->useTurn();
+myTeam.pokemon->add(encounter4);
+print("Caught " + encounter4 + "!");
+catchCount = catchCount + 1;
+
+var encounter5 = myZone.pokemon->random();
+print("Encounter 5: A wild " + encounter5 + " appeared!");
+myZone->useBall();
+myZone->useTurn();
+myTeam.pokemon->add(encounter5);
+print("Caught " + encounter5 + "!");
+catchCount = catchCount + 1;
+
+print("Total Pokemon caught: " + catchCount);
+print("");
+
+print("--- Final Team Roster ---");
+print("Trainer: " + myTeam.trainerName);
+print("Team: " + myTeam.pokemon->list());
+print("Size: " + myTeam.pokemon->count() + " / " + myTeam.maxSize);
+print("");
+
+print("--- Final Resource Check ---");
+print("Balls: " + myZone.balls + " / " + myZone.initialBalls);
+print("Turns: " + myZone.turns + " / " + myZone.initialTurns);
+var gameOver = myZone->isGameOver();
+print("Game Over? " + gameOver);
+print("");
+
+print("--- Team Management ---");
+print("Finding a Pokemon in team...");
+var foundMember = myTeam.pokemon->find(encounter1);
+print("Found: " + foundMember);
+
+print("Getting a random team member...");
+var randomMember = myTeam.pokemon->random();
+print("Random member: " + randomMember);
+print("");
+
+print("--- Comparison Tests ---");
+var zoneCount = myZone.pokemon->count();
+var teamCount = myTeam.pokemon->count();
+print("Zone has " + zoneCount + " Pokemon");
+print("Team has " + teamCount + " Pokemon");
+var zoneHasMore = zoneCount > teamCount;
+print("Zone has more Pokemon than team? " + zoneHasMore);
+print("");
+
+print("--- Multiple Zones Test ---");
+var zone2 = SafariZone(20, 300);
+zone2.pokemon->add("Tauros");
+zone2.pokemon->add("Chansey");
+zone2.pokemon->add("Scyther");
+print("Zone 1: " + myZone.pokemon->count() + " Pokemon, " + myZone.balls + " balls");
+print("Zone 2: " + zone2.pokemon->count() + " Pokemon, " + zone2.balls + " balls");
+var zone1HasMoreBalls = myZone.balls > zone2.balls;
+print("Zone 1 has more balls? " + zone1HasMoreBalls);
+print("");
+
+print("--- Multiple Teams Test ---");
+var team2 = Team("Gary", 6);
+team2.pokemon->add("Eevee");
+team2.pokemon->add("Umbreon");
+print("Team 1 (" + myTeam.trainerName + "): " + myTeam.pokemon->count() + " Pokemon");
+print("Team 2 (" + team2.trainerName + "): " + team2.pokemon->count() + " Pokemon");
+var team1HasMore = myTeam.pokemon->count() > team2.pokemon->count();
+print("Team 1 has more Pokemon? " + team1HasMore);
+print("");
+
+print("--- Reset and Restart ---");
+print("Resetting Safari Zone resources...");
+myZone->reset();
+print("After reset - Balls: " + myZone.balls + ", Turns: " + myZone.turns);
+var resetGameOver = myZone->isGameOver();
+print("Game Over after reset? " + resetGameOver);
+print("");
+
+print("=== Adventure Complete! ===");
+print("Summary:");
+print("  - Final Team: " + myTeam.pokemon->list());
+print("  - Team Size: " + myTeam.pokemon->count() + " / " + myTeam.maxSize);
+print("  - Zone Resources: " + myZone.balls + " balls, " + myZone.turns + " turns");
+print("  - Total Pokemon Caught: " + catchCount);
+

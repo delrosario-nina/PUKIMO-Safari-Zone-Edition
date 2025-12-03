@@ -1,0 +1,74 @@
+:> PukiMO If/Else Feature Test Suite
+
+:> ------ Simple if/else -------
+var a = 7;
+if (a > 10) {
+    print("a is greater than 10");
+} else {
+    print("a is NOT greater than 10");
+}
+
+:> ------ Nested if/else -------
+var y = 3;
+if (y % 2 == 1) {
+    if (y > 5) {
+        print("odd and big");
+    } else {
+        print("odd and small");
+    }
+} else {
+    print("even");
+}
+
+:> ------ Multiple if/else chain -------
+var x = 25;
+if (x < 10) {
+    print("small");
+} else {
+    print("not small");
+}
+
+if (x < 20) {
+    print("medium-ish");
+} else {
+    print("not medium-ish");
+}
+
+if (temp > 30 && hum<80) {
+    print("large");
+} else {
+    print("not large");
+}
+
+:> ------ Boolean expression -------
+var flag = true;
+if (!flag) {
+    print("should not print");
+} else {
+    print("flag is true");
+}
+
+:> ------ Test with variable assignment and prints -------
+var b = 100;
+if (b == 100) {
+    print("b is 100");
+    b = 200;
+} else {
+    print("b is not 100");
+}
+print(b);
+
+
+
+define makeCounter() {
+    var count = 0;
+    define increment() {
+        count = count + 1;
+        return count;
+    }
+    return increment;
+}
+
+var counter = makeCounter();
+print (counter());
+print (counter());

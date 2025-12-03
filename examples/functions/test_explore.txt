@@ -1,0 +1,52 @@
+:> PukiMO SafariZone Explore Feature Test Suite
+
+:> --- Setup SafariZone object and Pokemon ---
+var zone = SafariZone(balls=5, turns=5);
+zone.pokemon->add("Pikachu");
+zone.pokemon->add("Bulbasaur");
+zone.pokemon->add("Charmander");
+zone.pokemon->add("Mew");
+
+print("Initial SafariZone: " + zone);
+
+:> --- Basic explore block, print all encounters ---
+explore(zone) {
+    print("Encountered: " + encounter);
+}
+
+print("After explore, balls left: " + zone.balls);
+print("Turns left: " + zone.turns);
+
+:> --- Explore with catching attempt and control flow (run) ---
+:> Reset zone for new test
+zone->reset();
+zone.pokemon->add("Squirtle");
+zone.pokemon->add("Jigglypuff");
+
+explore(zone) {
+    print("Trying to catch: " + encounter);
+    var caught = zone.pokemon->attemptCatch(encounter, zone);   // Attempts catch and decrements balls
+    if (caught) {
+        print("Caught: " + encounter);
+    } else {
+        print(encounter + " escaped.");
+    }
+}
+
+print("Pokemon left in zone: " + zone.pokemon->list());
+
+:> --- Explore: exit early with run if legendary found ---
+zone->reset();
+zone.pokemon->add("Articuno");
+zone.pokemon->add("Zapdos");
+zone.pokemon->add("Moltres");
+
+explore(zone) {
+    print("Searching: " + encounter);
+    if (encounter == "Articuno" || encounter == "Zapdos" || encounter == "Moltres") {
+        print("Legendary found! Ending Safari early.");
+        run;
+    }
+}
+
+print("SafariZone status at end: " + zone);

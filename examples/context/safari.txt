@@ -1,0 +1,129 @@
+print("=== SafariZone Object Test ===");
+print("");
+
+print("--- Test 1: Creating SafariZone ---");
+var zone = SafariZone(30, 500);
+print("Created: " + zone);
+print("");
+
+print("--- Test 2: Check Initial Properties ---");
+print("Initial balls: " + zone.initialBalls);
+print("Initial turns: " + zone.initialTurns);
+print("Current balls: " + zone.balls);
+print("Current turns: " + zone.turns);
+print("Pokemon count: " + zone.pokemon->count());
+print("");
+
+print("--- Test 3: Adding Pokemon ---");
+zone.pokemon->add("Pikachu");
+print("Added Pikachu");
+zone.pokemon->add("Charmander");
+print("Added Charmander");
+zone.pokemon->add("Bulbasaur");
+print("Added Bulbasaur");
+zone.pokemon->add("Squirtle");
+print("Added Squirtle");
+print("Pokemon in zone: " + zone.pokemon->list());
+print("Pokemon count: " + zone.pokemon->count());
+print("");
+
+print("--- Test 4: Finding Pokemon ---");
+var found = zone.pokemon->find("charmander");
+print("Find 'charmander' (case-insensitive): " + found);
+var notFound = zone.pokemon->find("Mewtwo");
+print("Find 'Mewtwo' (not in zone): " + notFound);
+print("");
+
+print("--- Test 5: Random Pokemon ---");
+var encounter1 = zone.pokemon->random();
+print("Random encounter 1: " + encounter1);
+var encounter2 = zone.pokemon->random();
+print("Random encounter 2: " + encounter2);
+var encounter3 = zone.pokemon->random();
+print("Random encounter 3: " + encounter3);
+print("");
+
+print("--- Test 6: Using Resources ---");
+print("Before using resources:");
+print("  Balls: " + zone.balls);
+print("  Turns: " + zone.turns);
+zone->useBall();
+zone->useBall();
+zone->useTurn();
+zone->useTurn();
+zone->useTurn();
+print("After using 2 balls and 3 turns:");
+print("  Balls: " + zone.balls);
+print("  Turns: " + zone.turns);
+print("");
+
+print("--- Test 7: Check Game Over ---");
+var gameOver = zone->isGameOver();
+print("Is game over? " + gameOver);
+print("");
+
+print("--- Test 8: Reset Resources ---");
+zone->reset();
+print("After reset:");
+print("  Balls: " + zone.balls);
+print("  Turns: " + zone.turns);
+print("");
+
+print("--- Test 9: Remove Pokemon ---");
+print("Before removal: " + zone.pokemon->list());
+var removed = zone.pokemon->remove("Charmander");
+print("Removed Charmander: " + removed);
+print("After removal: " + zone.pokemon->list());
+print("Pokemon count: " + zone.pokemon->count());
+print("");
+
+print("--- Test 10: Property Assignment ---");
+zone.balls = 10;
+zone.turns = 50;
+print("Set balls to 10 and turns to 50");
+print("  Balls: " + zone.balls);
+print("  Turns: " + zone.turns);
+print("");
+
+print("--- Test 11: Use All Resources ---");
+zone.balls = 3;
+print("Starting with 3 balls");
+zone->useBall();
+print("Used 1 ball, remaining: " + zone.balls);
+zone->useBall();
+print("Used 1 ball, remaining: " + zone.balls);
+zone->useBall();
+print("Used 1 ball, remaining: " + zone.balls);
+var isOver = zone->isGameOver();
+print("Is game over now? " + isOver);
+print("");
+
+print("--- Test 12: Different Zone Configurations ---");
+var smallZone = SafariZone(5, 10);
+print("Small zone: " + smallZone);
+print("  Initial balls: " + smallZone.initialBalls);
+print("  Initial turns: " + smallZone.initialTurns);
+
+var bigZone = SafariZone(100, 1000);
+print("Big zone: " + bigZone);
+print("  Initial balls: " + bigZone.initialBalls);
+print("  Initial turns: " + bigZone.initialTurns);
+print("");
+
+print("--- Test 13: Empty Pokemon Collection ---");
+var emptyZone = SafariZone(10, 10);
+print("Empty zone pokemon count: " + emptyZone.pokemon->count());
+var isEmpty = emptyZone.pokemon->isEmpty();
+print("Is pokemon collection empty? " + isEmpty);
+print("");
+
+print("--- Test 14: Clear Pokemon Collection ---");
+print("Zone before clear: " + zone.pokemon->list());
+zone.pokemon->clear();
+print("Zone after clear: " + zone.pokemon->list());
+print("Pokemon count after clear: " + zone.pokemon->count());
+var isEmptyNow = zone.pokemon->isEmpty();
+print("Is empty after clear? " + isEmptyNow);
+print("");
+
+print("=== All SafariZone Tests Complete! ===");
