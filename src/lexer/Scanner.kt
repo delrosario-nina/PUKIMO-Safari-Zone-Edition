@@ -18,7 +18,6 @@ class Scanner {
             "define" -> TokenType.DEFINE_KEYWORD to null
             "return" -> TokenType.RETURN_KEYWORD to null
             "print" -> TokenType.PRINT_KEYWORD to null
-            "throwBall" -> TokenType.THROWBALL_KEYWORD to null
             "const" -> TokenType.CONST_KEYWORD to null
             "SafariZone" -> TokenType.SAFARI_ZONE to null
             "Team" -> TokenType.TEAM to null
@@ -103,7 +102,9 @@ class Scanner {
             ">=" to TokenType.GREATER_EQUAL,
             "&&" to TokenType.AND,
             "||" to TokenType.OR,
-            "->" to TokenType.ARROW
+            "->" to TokenType.ARROW,
+            ":" to TokenType.COLON,
+
         )
         for ((symbol, type) in twoCharOps) {
             if (remaining.startsWith(symbol)) {

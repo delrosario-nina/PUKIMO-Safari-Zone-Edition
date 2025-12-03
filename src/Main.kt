@@ -113,6 +113,8 @@ fun runRepl() {
 
         val line = input.nextLine() ?: break
 
+
+
         if (line.trim().lowercase() == "exit") break
         if (line.trim().isEmpty()) {
             if (buffer.isBalanced() && buffer.hasContent()) {

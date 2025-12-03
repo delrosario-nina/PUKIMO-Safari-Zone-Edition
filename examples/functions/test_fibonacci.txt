@@ -1,0 +1,23 @@
+define fibonacci(n: int) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+var zone = SafariZone(balls=5, turns=20);
+zone.pokemon->add("Bulbasaur");
+zone.pokemon->add("Charmander");
+zone.pokemon->add("Squirtle");
+zone.pokemon->add("Pikachu");
+
+var i = 0;
+
+explore(zone) {
+    i = i + 1;
+    print(fibonacci(i));
+
+    if (i > 10) {
+        run;
+    }
+}

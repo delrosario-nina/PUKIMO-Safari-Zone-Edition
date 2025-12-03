@@ -1,0 +1,41 @@
+:> PukiMO Arity Checking Test Suite
+
+:> --------- DEFINE FUNCTIONS ----------
+define echo(x) { print(x); }
+define add(a, b) { print(a + b); }
+define combine(a, b, c) { print(a + b + c); }
+
+:> --------- ARITY: CORRECT CALLS ----------
+echo("hello");
+add(1, 2);
+combine("a", "b", "c");
+
+:> --------- ARITY: TOO FEW ARGUMENTS ----------
+:> Uncomment to test (should error: argument count mismatch)
+echo();
+:>add(5);
+:>combine("a", "b");
+
+:> --------- ARITY: TOO MANY ARGUMENTS ----------
+:> Uncomment to test (should error: argument count mismatch)
+:> echo("X", "Y");
+:> add(1, 2, 3);
+:> combine("a", "b", "c", "d");
+
+:> --------- FUNCTION IN FUNCTION TEST (Nested) ----------
+define outer(a, b) {
+    define inner(x) { print("inner: " + x); }
+    inner(a + b);
+}
+outer(1, 2);
+
+:> --------- RECURSION ARITY ----------
+define fakeRec(a, b) {
+    if (a == 0) {
+        return b;
+    }
+    return fakeRec(a - 1, b + 1);
+}
+print(fakeRec(3, 7));
+:> Uncomment to test error:
+:> fakeRec(1);
