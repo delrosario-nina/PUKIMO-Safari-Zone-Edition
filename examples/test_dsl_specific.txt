@@ -1,0 +1,322 @@
+:> ========================================
+:> PukiMO Safari Zone Simulation Game
+:> A simple Pokemon catching adventure!
+:> ========================================
+
+print("╔════════════════════════════════════════╗");
+print("║     Welcome to Safari Zone!            ║");
+print("╚════════════════════════════════════════╝");
+print("");
+
+:> ========================================
+:> Game Setup
+:> ========================================
+
+:> Create Safari Zone
+var zone = SafariZone(balls=30, turns=500);
+var team = Team("Player", maxSize=6);
+
+:> Add common Pokemon
+zone.pokemon->addAll([
+    "Pidgey", "Rattata", "Spearow", "Caterpie",
+    "Weedle", "Rattata", "Pidgey", "Rattata"
+]);
+
+:> Add uncommon Pokemon
+zone.pokemon->addAll([
+    "Pikachu", "Eevee", "Jigglypuff", "Meowth"
+]);
+
+:> Add rare Pokemon
+zone.pokemon->addAll([
+    "Dratini", "Lapras", "Snorlax"
+]);
+
+:> Add legendary Pokemon
+zone.pokemon->addAll([
+    "Articuno", "Zapdos", "Moltres"
+]);
+
+:> ========================================
+:> Set Catch Rates
+:> ========================================
+
+:> Global default rate
+zone.pokemon->setCatchRate(50);
+
+:> Common Pokemon (high catch rate)
+zone.pokemon->setSpeciesCatchRate("Pidgey", 90);
+zone.pokemon->setSpeciesCatchRate("Rattata", 95);
+zone.pokemon->setSpeciesCatchRate("Spearow", 85);
+zone.pokemon->setSpeciesCatchRate("Caterpie", 95);
+zone.pokemon->setSpeciesCatchRate("Weedle", 95);
+
+:> Uncommon Pokemon (medium catch rate)
+zone.pokemon->setSpeciesCatchRate("Pikachu", 30);
+zone.pokemon->setSpeciesCatchRate("Eevee", 35);
+zone.pokemon->setSpeciesCatchRate("Jigglypuff", 40);
+zone.pokemon->setSpeciesCatchRate("Meowth", 45);
+
+:> Rare Pokemon (low catch rate)
+zone.pokemon->setSpeciesCatchRate("Dratini", 15);
+zone.pokemon->setSpeciesCatchRate("Lapras", 10);
+zone.pokemon->setSpeciesCatchRate("Snorlax", 20);
+
+:> Legendary Pokemon (very low catch rate)
+zone.pokemon->setSpeciesCatchRate("Articuno", 3);
+zone.pokemon->setSpeciesCatchRate("Zapdos", 3);
+zone.pokemon->setSpeciesCatchRate("Moltres", 3);
+
+:> ========================================
+:> Helper Functions
+:> ========================================
+
+define getRarity(pokemonName) {
+    :> Check legendary
+    if (pokemonName == "Articuno") {
+        return "LEGENDARY";
+    }
+    if (pokemonName == "Zapdos") {
+        return "LEGENDARY";
+    }
+    if (pokemonName == "Moltres") {
+        return "LEGENDARY";
+    }
+
+    :> Check rare
+    if (pokemonName == "Dratini") {
+        return "RARE";
+    }
+    if (pokemonName == "Lapras") {
+        return "RARE";
+    }
+    if (pokemonName == "Snorlax") {
+        return "RARE";
+    }
+
+    :> Check uncommon
+    if (pokemonName == "Pikachu") {
+        return "UNCOMMON";
+    }
+    if (pokemonName == "Eevee") {
+        return "UNCOMMON";
+    }
+    if (pokemonName == "Jigglypuff") {
+        return "UNCOMMON";
+    }
+    if (pokemonName == "Meowth") {
+        return "UNCOMMON";
+    }
+
+    :> Default to common
+    return "COMMON";
+}
+
+:> ========================================
+:> Game Introduction
+:> ========================================
+
+print("You have entered the Safari Zone!");
+print("");
+print("Your mission:");
+print("  - Catch up to 6 Pokemon");
+print("  - You have 30 Safari Balls");
+print("  - You have 500 turns");
+print("");
+print("Rarity levels:");
+print("  COMMON: Easy to catch");
+print("  UNCOMMON: Moderate difficulty");
+print("  RARE: Hard to catch");
+print("  LEGENDARY: Very hard to catch!");
+print("");
+print("╔════════════════════════════════════════╗");
+print("║        Starting Safari!                ║");
+print("╚════════════════════════════════════════╝");
+print("");
+
+:> ========================================
+:> Main Game Loop
+:> ========================================
+
+var pokemonCaught = 0;
+var attemptsMade = 0;
+var encounterCount = 0;
+
+explore(zone) {
+    encounterCount = encounterCount + 1;
+    var rarity = getRarity(encounter);
+
+    print(">>> [" + rarity + "] A wild " + encounter + " appeared!");
+
+    :> Check if we have Safari Balls
+    if (zone.balls <= 0) {
+        print("    OUT OF SAFARI BALLS!");
+        print("    Safari Zone adventure ended.");
+        run;
+    }
+
+    :> Check if team is full
+    if (team.pokemonCount >= team.maxSize) {
+        print("    Your team is full!");
+        print("    Returning to entrance.. .");
+        run;
+    }
+
+    :> Attempt to catch
+    print("    Throwing Safari Ball...");
+    attemptsMade = attemptsMade + 1;
+    var caught = zone.pokemon->attemptCatch(encounter, zone);
+
+    if (caught) {
+        team.pokemon->add(encounter);
+        pokemonCaught = pokemonCaught + 1;
+        print("    SUCCESS! Caught " + encounter + "!");
+
+        :> Special message for legendary
+        if (rarity == "LEGENDARY") {
+            print("    ╔════════════════════════════════════════╗");
+            print("    ║  LEGENDARY POKEMON CAPTURED!           ║");
+            print("    ╚════════════════════════════════════════╝");
+        }
+
+        print("    Added to team! (" + team.pokemonCount + "/6)");
+
+        :> Check if team is now full
+        if (team.pokemonCount >= team.maxSize) {
+            print("");
+            print("╔════════════════════════════════════════╗");
+            print("║     TEAM COMPLETE!                     ║");
+            print("║     Congratulations!                    ║");
+            print("╚════════════════════════════════════════╝");
+            run;
+        }
+    } else {
+        print("    Oh no! " + encounter + " broke free and escaped!");
+    }
+
+    :> Show resources every 5 encounters
+    if (encounterCount == 5 || encounterCount == 10 || encounterCount == 15 || encounterCount == 20) {
+        print("    [Resources: " + zone.balls + " balls, " + zone.turns + " turns left]");
+    }
+
+    print("");
+}
+
+:> ========================================
+:> Game Over - Final Results
+:> ========================================
+
+print("");
+print("╔════════════════════════════════════════╗");
+print("║      Safari Zone Adventure Over!       ║");
+print("╚════════════════════════════════════════╝");
+print("");
+
+:> Calculate statistics
+var ballsUsed = zone.initialBalls - zone.balls;
+var turnsUsed = zone. initialTurns - zone.turns;
+var catchRate = 0;
+if (attemptsMade > 0) {
+    catchRate = (pokemonCaught * 100) / attemptsMade;
+}
+
+:> Display final stats
+print("=== Final Statistics ===");
+print("");
+print("Encounters: " + encounterCount);
+print("Catch Attempts: " + attemptsMade);
+print("Pokemon Caught: " + pokemonCaught);
+print("Success Rate: " + catchRate + "%");
+print("");
+print("Safari Balls Used: " + ballsUsed + "/" + zone.initialBalls);
+print("Turns Used: " + turnsUsed + "/" + zone.initialTurns);
+print("");
+
+:> Display final team
+print("=== Your Final Team ===");
+print("");
+if (team.pokemonCount > 0) {
+    var finalTeam = team.pokemon->list();
+    for (i in 0 to team.pokemonCount - 1) {
+        var pokemon = finalTeam[i];
+        var pokemonRarity = getRarity(pokemon);
+        print("  " + (i + 1) + ".  " + pokemon + " [" + pokemonRarity + "]");
+    }
+    print("");
+} else {
+    print("  (No Pokemon caught)");
+    print("");
+}
+
+:> Count rarities in team
+var legendaryCount = 0;
+var rareCount = 0;
+var uncommonCount = 0;
+var commonCount = 0;
+
+if (team.pokemonCount > 0) {
+    var finalTeamList = team.pokemon->list();
+    for (i in 0 to team.pokemonCount - 1) {
+        var poke = finalTeamList[i];
+        var pokeRarity = getRarity(poke);
+
+        if (pokeRarity == "LEGENDARY") {
+            legendaryCount = legendaryCount + 1;
+        }
+        if (pokeRarity == "RARE") {
+            rareCount = rareCount + 1;
+        }
+        if (pokeRarity == "UNCOMMON") {
+            uncommonCount = uncommonCount + 1;
+        }
+        if (pokeRarity == "COMMON") {
+            commonCount = commonCount + 1;
+        }
+    }
+}
+
+:> Display rarity breakdown
+print("=== Rarity Breakdown ===");
+print("");
+print("Legendary: " + legendaryCount);
+print("Rare: " + rareCount);
+print("Uncommon: " + uncommonCount);
+print("Common: " + commonCount);
+print("");
+
+:> Final rating
+print("=== Performance Rating ===");
+print("");
+
+if (legendaryCount > 0) {
+    print("LEGENDARY TRAINER!");
+    print("You caught a legendary Pokemon!");
+} else {
+    if (team.pokemonCount >= 6) {
+        print("EXPERT TRAINER!");
+        print("You filled your entire team!");
+    } else {
+        if (team.pokemonCount >= 4) {
+            print("SKILLED TRAINER!");
+            print("Nice collection!");
+        } else {
+            if (team.pokemonCount >= 2) {
+                print("NOVICE TRAINER");
+                print("Keep practicing!");
+            } else {
+                if (team.pokemonCount >= 1) {
+                    print("BEGINNER TRAINER");
+                    print("At least you caught something!");
+                } else {
+                    print("NO POKEMON");
+                    print("Better luck next time!");
+                }
+            }
+        }
+    }
+}
+
+print("");
+print("╔════════════════════════════════════════╗");
+print("║    Thanks for playing Safari Zone!    ║");
+print("╚════════════════════════════════════════╝");

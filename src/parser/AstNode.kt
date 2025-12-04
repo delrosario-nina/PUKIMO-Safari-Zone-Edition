@@ -29,17 +29,14 @@ data class PrintStmt(val expression: Expr) : Stmt() {
 data class Block(val stmtList: List<Stmt>) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitBlock(this)
 }
-data class RunStmt(val token: Token) : Stmt() {
-    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitRunStmt(this)
-}
+
 data class ExploreStmt(val safariZoneVar: Token, val block: Block) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitExploreStmt(this)
 }
-data class Parameter(val name: Token, val type: Type)
 
 data class DefineStmt(
     val name: Token,
-    val paramList: List<Parameter>, // Use Parameter(name:Token, type:Type)
+    val paramList: List<Token>,
     val block: Block
 ) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitDefineStmt(this)
@@ -81,7 +78,60 @@ data class PropertyAccessExpr(val primaryWithSuffixes: Expr, val identifier: Tok
 
 data class FunctionObject(
     val name: Token,
-    val parameters: List<Parameter>,
+    val parameters: List<Token>,
     val body: Block,
-    val closure: Environment  // Captures environment where function was defined
+    val closure: Environment
 )
+
+data class WhileStmt(
+    val keyword: Token,
+    val condition: Expr,
+    val body: Block
+) : Stmt() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitWhileStmt(this)
+}
+
+data class ForStmt(
+    val keyword: Token,
+    val variable: Token,
+    val start: Expr,
+    val end: Expr?,
+    val body: Block,
+    val isRangeLoop: Boolean = false
+) : Stmt() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitForStmt(this)
+}
+
+data class BreakStmt(val keyword: Token) : Stmt() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor. visitBreakStmt(this)
+}
+
+data class ContinueStmt(val keyword: Token) : Stmt() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitContinueStmt(this)
+}
+
+// ========== Array Expressions ==========
+
+data class ArrayLiteralExpr(
+    val leftBracket: Token,
+    val elements: List<Expr>
+) : Expr() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitArrayLiteralExpr(this)
+}
+
+data class ArrayAccessExpr(
+    val array: Expr,
+    val leftBracket: Token,
+    val index: Expr
+) : Expr() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitArrayAccessExpr(this)
+}
+
+data class ArrayAssignExpr(
+    val array: Expr,
+    val leftBracket: Token,
+    val index: Expr,
+    val value: Expr
+) : Expr() {
+    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitArrayAssignExpr(this)
+}

@@ -1,23 +1,242 @@
-define fibonacci(n: int) {
+:> ========================================
+:> Fibonacci Test Suite
+:> ========================================
+
+print("=== Fibonacci Test Suite ===");
+print("");
+
+:> ========================================
+:> Test 1: Basic Fibonacci Function
+:> ========================================
+print("--- Test 1: Basic Fibonacci ---");
+
+define fibonacci(n) {
     if (n <= 1) {
         return n;
     }
     return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-var zone = SafariZone(balls=5, turns=20);
-zone.pokemon->add("Bulbasaur");
-zone.pokemon->add("Charmander");
-zone.pokemon->add("Squirtle");
-zone.pokemon->add("Pikachu");
+print("Fibonacci sequence (first 10 numbers):");
+for (i in 0 to 9) {
+    print("fib(" + i + ") = " + fibonacci(i));
+}
+print("");
 
-var i = 0;
+:> ========================================
+:> Test 2: Specific Values
+:> ========================================
+print("--- Test 2: Verify Specific Values ---");
 
-explore(zone) {
-    i = i + 1;
-    print(fibonacci(i));
+var fib0 = fibonacci(0);
+var fib1 = fibonacci(1);
+var fib5 = fibonacci(5);
+var fib7 = fibonacci(7);
+var fib10 = fibonacci(10);
 
-    if (i > 10) {
-        run;
+print("fib(0) = " + fib0 + " (expected: 0)");
+if (fib0 == 0) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+print("fib(1) = " + fib1 + " (expected: 1)");
+if (fib1 == 1) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+print("fib(5) = " + fib5 + " (expected: 5)");
+if (fib5 == 5) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+print("fib(7) = " + fib7 + " (expected: 13)");
+if (fib7 == 13) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+print("fib(10) = " + fib10 + " (expected: 55)");
+if (fib10 == 55) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 3: Iterative Fibonacci
+:> ========================================
+print("--- Test 3: Iterative Fibonacci ---");
+
+define fibonacciIterative(n) {
+    if (n <= 1) {
+        return n;
+    }
+    
+    var prev = 0;
+    var curr = 1;
+    var temp = 0;
+    
+    for (i in 2 to n) {
+        temp = curr;
+        curr = prev + curr;
+        prev = temp;
+    }
+    
+    return curr;
+}
+
+print("Iterative Fibonacci (first 10 numbers):");
+for (i in 0 to 9) {
+    print("fibIter(" + i + ") = " + fibonacciIterative(i));
+}
+print("");
+
+:> ========================================
+:> Test 4: Compare Recursive vs Iterative
+:> ========================================
+print("--- Test 4: Recursive vs Iterative ---");
+
+for (i in 0 to 8) {
+    var recursive = fibonacci(i);
+    var iterative = fibonacciIterative(i);
+    
+    print("n=" + i + ": recursive=" + recursive + ", iterative=" + iterative);
+    
+    if (recursive == iterative) {
+        print("  PASS: values match");
+    } else {
+        print("  FAIL: values differ");
     }
 }
+print("");
+
+:> ========================================
+:> Test 5: Edge Cases
+:> ========================================
+print("--- Test 5: Edge Cases ---");
+
+print("fib(0) = " + fibonacci(0));
+print("fib(1) = " + fibonacci(1));
+print("fib(2) = " + fibonacci(2));
+print("");
+
+:> ========================================
+:> Test 6: Fibonacci with Closure (Memoization)
+:> ========================================
+print("--- Test 6: Fibonacci with Memoization ---");
+
+define makeFibonacci() {
+    var cache0 = 0;
+    var cache1 = 1;
+    
+    define fib(n) {
+        if (n == 0) {
+            return cache0;
+        }
+        if (n == 1) {
+            return cache1;
+        }
+        
+        :> Simple recursive without full memoization
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+    
+    return fib;
+}
+
+var fibFunc = makeFibonacci();
+print("Memoized fib(5) = " + fibFunc(5));
+print("Memoized fib(7) = " + fibFunc(7));
+print("");
+
+:> ========================================
+:> Test 7: Fibonacci in Expression
+:> ========================================
+print("--- Test 7: Fibonacci in Expression ---");
+
+var sum = fibonacci(3) + fibonacci(4) + fibonacci(5);
+print("fib(3) + fib(4) + fib(5) = " + sum);
+print("Expected: 2 + 3 + 5 = 10");
+
+if (sum == 10) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 8: Fibonacci Sequence Generator
+:> ========================================
+print("--- Test 8: Generate Sequence ---");
+
+define generateFibonacci(count) {
+    print("Generating " + count + " Fibonacci numbers:");
+    for (i in 0 to count - 1) {
+        print("  " + fibonacci(i));
+    }
+}
+
+generateFibonacci(8);
+print("");
+
+:> ========================================
+:> Test 9: Sum of Fibonacci Numbers
+:> ========================================
+print("--- Test 9: Sum of Fibonacci ---");
+
+define sumFibonacci(n) {
+    var total = 0;
+    for (i in 0 to n) {
+        total = total + fibonacci(i);
+    }
+    return total;
+}
+
+var sum10 = sumFibonacci(10);
+print("Sum of first 11 fibonacci numbers: " + sum10);
+print("Expected: 0+1+1+2+3+5+8+13+21+34+55 = 143");
+
+if (sum10 == 143) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 10: Even Fibonacci Numbers
+:> ========================================
+print("--- Test 10: Even Fibonacci Numbers ---");
+
+print("Even Fibonacci numbers up to fib(15):");
+for (i in 0 to 15) {
+    var fib = fibonacci(i);
+    if (fib % 2 == 0) {
+        print("  fib(" + i + ") = " + fib);
+    }
+}
+print("");
+
+:> ========================================
+:> Final Summary
+:> ========================================
+print("=================================");
+print("  Fibonacci Test Suite Complete");
+print("=================================");
+print("");
+print("Fibonacci Sequence: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89.. .");
+print("Formula: F(n) = F(n-1) + F(n-2)");
+print("Base cases: F(0) = 0, F(1) = 1");

@@ -1,0 +1,61 @@
+var name = "Pikachu";
+print(name[0]);
+print(name[1]);
+print(name[2]);
+print(name[6]);
+print(length(name));
+
+var word = "Pokemon";
+for char in word {
+    print(char);
+}
+
+var string1 = "string";
+var string2 = "";
+
+for char in string1 {
+    if (char == "t") {
+        string2 = string2 + "k";
+    } else {
+        string2 = string2 + char;
+    }
+}
+
+print("Original: " + string1);
+print("Modified: " + string2);
+
+var greeting = "Hello";
+var reversed = "";
+
+for char in greeting {
+    reversed = char + reversed;
+}
+
+print("Original: " + greeting);
+print("Reversed: " + reversed);
+
+var text = "Charmander";
+var count_a = 0;
+
+for ch in text {
+    if ch == "a" {
+        count_a = count_a + 1;
+    }
+}
+
+print("Text: " + text);
+print("Count of 'a': " + count_a);
+
+var numbers = [1, 2, 3, 4, 5];
+for num in numbers {
+    print(num);
+}
+
+var pokemon = ["Pikachu", "Charmander", "Squirtle"];
+for p in pokemon {
+    print(p);
+}
+
+for i in 0 to 10 {
+    print(i);
+}

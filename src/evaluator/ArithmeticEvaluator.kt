@@ -12,6 +12,7 @@ class ArithmeticEvaluator(private val errorHandler: EvaluatorErrorHandler) {
     /**
      * Evaluates a binary expression based on operator type.
      */
+    // In ArithmeticEvaluator.evaluate()
     fun evaluate(left: Any?, operator: Token, right: Any?): Any? {
         return when (operator.type) {
             // Arithmetic
@@ -19,7 +20,7 @@ class ArithmeticEvaluator(private val errorHandler: EvaluatorErrorHandler) {
             TokenType.MINUS -> evaluateMinus(left, right, operator)
             TokenType.MULTIPLY -> evaluateMultiply(left, right, operator)
             TokenType.DIVIDE -> evaluateDivide(left, right, operator)
-            TokenType.MODULO -> evaluateModulo(left, right, operator)
+            TokenType. MODULO -> evaluateModulo(left, right, operator)
 
             // Comparison
             TokenType.LESS_THAN -> evaluateLessThan(left, right, operator)
@@ -27,23 +28,11 @@ class ArithmeticEvaluator(private val errorHandler: EvaluatorErrorHandler) {
             TokenType.GREATER_THAN -> evaluateGreaterThan(left, right, operator)
             TokenType.GREATER_EQUAL -> evaluateGreaterEqual(left, right, operator)
             TokenType.EQUAL_EQUAL -> evaluateEqual(left, right)
-            TokenType.NOT_EQUAL -> !evaluateEqual(left, right)
-
-            // Logical
-            TokenType.AND -> {
-                if (!isTruthy(left)) return false  // Short-circuit: don't evaluate right
-                return isTruthy(right)
-            }
-
-            TokenType.OR -> {
-                if (isTruthy(left)) return true    // Short-circuit: don't evaluate right
-                return isTruthy(right)
-            }
+            TokenType.NOT_EQUAL -> ! evaluateEqual(left, right)
 
             else -> throw errorHandler.error(operator, "Unknown binary operator: ${operator.lexeme}")
         }
     }
-
     // ==================== Arithmetic Operations ====================
 
     private fun evaluatePlus(left: Any?, right: Any?, operator: Token): Any? {
@@ -156,28 +145,6 @@ class ArithmeticEvaluator(private val errorHandler: EvaluatorErrorHandler) {
 
     private fun evaluateEqual(left: Any?, right: Any?): Boolean {
         return left == right
-    }
-
-    // ==================== Logical Operations ====================
-
-    private fun evaluateAnd(left: Any?, right: Any?, operator: Token): Boolean {
-        if (left !is Boolean) {
-            throw errorHandler.typeError(operator, "Left operand of && must be boolean")
-        }
-        if (right !is Boolean) {
-            throw errorHandler.typeError(operator, "Right operand of && must be boolean")
-        }
-        return left && right
-    }
-
-    private fun evaluateOr(left: Any?, right: Any?, operator: Token): Boolean {
-        if (left !is Boolean) {
-            throw errorHandler.typeError(operator, "Left operand of || must be boolean")
-        }
-        if (right !is Boolean) {
-            throw errorHandler.typeError(operator, "Right operand of || must be boolean")
-        }
-        return left || right
     }
 
     // ==================== Helper Methods ====================

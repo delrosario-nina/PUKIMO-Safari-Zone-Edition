@@ -1,59 +1,362 @@
-:> PukiMO User-Defined Function Feature Test Suite
+:> ========================================
+:> PukiMO Function Test Suite - Simple
+:> ========================================
 
-:> --- Simple function definition and call ---
+print("=== Function Test Suite ===");
+print("");
+
+:> ========================================
+:> Test 1: Basic Function
+:> ========================================
+print("--- Test 1: Basic Function ---");
+
 define greet(name) {
-    print("Hello, " + name + "!");
+    print("Hello, " + name);
 }
-greet("PukiMO");
 
-:> --- Function returning a value ---
-define double(x) {
-    return x * 2;
+greet("Ash");
+print("");
+
+:> ========================================
+:> Test 2: Return Value
+:> ========================================
+print("--- Test 2: Return Value ---");
+
+define square(x) {
+    return x * x;
 }
-print(double(5));
 
-:> --- Function with multiple arguments ---
-define concat(a, b, c) {
-    return a + b + c;
+var result = square(5);
+print("Square of 5: " + result);
+
+if (result == 25) {
+    print("PASS");
+} else {
+    print("FAIL");
 }
-print(concat("Puki", "MO", "!"));
+print("");
 
-:> --- Function used in an expression ---
+:> ========================================
+:> Test 3: Multiple Parameters
+:> ========================================
+print("--- Test 3: Multiple Parameters ---");
+
 define add(a, b) {
     return a + b;
 }
-var result = add(3, 4) * 2;
-print(result);
 
-:> --- Nested function calls ---
-define triple(x) {
-    return double(x) + x;
+var sum = add(10, 20);
+print("Sum: " + sum);
+
+if (sum == 30) {
+    print("PASS");
+} else {
+    print("FAIL");
 }
-print(triple(5));
+print("");
 
-:> --- Function as argument to another function ---
-define shout(msg) {
-    print(msg + "!");
+:> ========================================
+:> Test 4: No Parameters
+:> ========================================
+print("--- Test 4: No Parameters ---");
+
+define getPokemon() {
+    return "Pikachu";
 }
-shout(greet("World"));
 
-:> --- Function calling itself (recursion) ---
+var pokemon = getPokemon();
+print("Pokemon: " + pokemon);
+print("");
+
+:> ========================================
+:> Test 5: Nested Calls
+:> ========================================
+print("--- Test 5: Nested Calls ---");
+
+define double(x) {
+    return x * 2;
+}
+
+define quadruple(x) {
+    return double(double(x));
+}
+
+var value = quadruple(5);
+print("Quadruple of 5: " + value);
+
+if (value == 20) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 6: Function with If/Else
+:> ========================================
+print("--- Test 6: If/Else in Function ---");
+
+define max(a, b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+var maximum = max(15, 8);
+print("Max: " + maximum);
+
+if (maximum == 15) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 7: Recursion - Factorial
+:> ========================================
+print("--- Test 7: Recursion ---");
+
+define factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+var fact5 = factorial(5);
+print("Factorial of 5: " + fact5);
+
+if (fact5 == 120) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 8: Recursion - Countdown
+:> ========================================
+print("--- Test 8: Countdown ---");
+
 define countdown(n) {
     if (n <= 0) {
-        print("Blastoff");
+        print("Blastoff!");
         return;
     }
     print(n);
     countdown(n - 1);
 }
-countdown(5);
 
-:> --- Function closure test ---
+countdown(3);
+print("");
+
+:> ========================================
+:> Test 9: Function as Variable
+:> ========================================
+print("--- Test 9: Function as Variable ---");
+
+define sayHello() {
+    return "Hello World";
+}
+
+var func = sayHello;
+var message = func();
+print(message);
+
+if (message == "Hello World") {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 10: Function as Argument
+:> ========================================
+print("--- Test 10: Function as Argument ---");
+
+define apply(func, x, y) {
+    return func(x, y);
+}
+
+define multiply(a, b) {
+    return a * b;
+}
+
+result = apply(multiply, 5, 3);
+print("Result: " + result);
+
+if (result == 15) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 11: Returning a Function
+:> ========================================
+print("--- Test 11: Return Function ---");
+
+define makeAdder(n) {
+    define adder(x) {
+        return x + n;
+    }
+    return adder;
+}
+
+var add5 = makeAdder(5);
+result = add5(3);
+print("5 + 3 = " + result);
+
+if (result == 8) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 12: Simple Closure
+:> ========================================
+print("--- Test 12: Closure ---");
+
+define makeCounter() {
+    var count = 0;
+    define increment() {
+        count = count + 1;
+        return count;
+    }
+    return increment;
+}
+
+var counter = makeCounter();
+print("Count: " + counter());
+print("Count: " + counter());
+print("Count: " + counter());
+print("");
+
+:> ========================================
+:> Test 13: Multiple Closures
+:> ========================================
+print("--- Test 13: Multiple Closures ---");
+
 define makeMultiplier(factor) {
-    define mult(x) {
+    define multiply(x) {
         return x * factor;
     }
-    return mult;
+    return multiply;
 }
-var timesThree = makeMultiplier(3);
-print(timesThree(7));
+
+var times2 = makeMultiplier(2);
+var times3 = makeMultiplier(3);
+
+print("2 * 5 = " + times2(5));
+print("3 * 5 = " + times3(5));
+
+if (times2(5) == 10 && times3(5) == 15) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 14: Nested Closures
+:> ========================================
+print("--- Test 14: Nested Closures ---");
+
+define outer() {
+    var x = 10;
+    define middle() {
+        var y = 20;
+        define inner() {
+            return x + y;
+        }
+        return inner;
+    }
+    return middle;
+}
+
+var middleFunc = outer();
+var innerFunc = middleFunc();
+result = innerFunc();
+print("Result: " + result);
+
+if (result == 30) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 15: Closure State
+:> ========================================
+print("--- Test 15: Closure State ---");
+
+define makeToggle() {
+    var state = false;
+    define toggle() {
+        state = ! state;
+        return state;
+    }
+    return toggle;
+}
+
+var toggle = makeToggle();
+print("Toggle: " + toggle());
+print("Toggle: " + toggle());
+print("Toggle: " + toggle());
+print("");
+
+:> ========================================
+:> Test 16: Local Variables
+:> ========================================
+print("--- Test 16: Local Variables ---");
+
+define calculate(x, y) {
+    var sum = x + y;
+    var product = x * y;
+    return sum + product;
+}
+
+result = calculate(5, 3);
+print("Result: " + result);
+
+if (result == 23) {
+    print("PASS");
+} else {
+    print("FAIL");
+}
+print("");
+
+:> ========================================
+:> Test 17: Early Return
+:> ========================================
+print("--- Test 17: Early Return ---");
+
+define checkValue(x) {
+    if (x < 0) {
+        return "negative";
+    }
+    if (x == 0) {
+        return "zero";
+    }
+    return "positive";
+}
+
+print("Check -5: " + checkValue(-5));
+print("Check 0: " + checkValue(0));
+print("Check 7: " + checkValue(7));
+print("");
+
+:> ========================================
+:> Final Summary
+:> ========================================
+print("=================================");
+print("  Test Suite Complete");
+print("=================================");
