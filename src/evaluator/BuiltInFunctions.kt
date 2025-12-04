@@ -110,7 +110,7 @@ class BuiltinFunctions(private val errorHandler: EvaluatorErrorHandler) {
 
         val mutableArray = array as MutableList<Any?>
         mutableArray.add(item)
-        return null
+        return item  // ← Return the item instead of null
     }
 
     private fun evaluateContains(expr: CallExpr, token: Token, evaluator: Evaluator): Boolean {

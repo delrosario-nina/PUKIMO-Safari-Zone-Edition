@@ -76,10 +76,28 @@ fun runFile(filename: String) {
         val tokens = scanner.scanAll(code)
         val parser = Parser(tokens)
         val ast = parser.parse()
+
+        // DEBUG: Print what we're about to evaluate
+        println("=== DEBUG: Checking statement at line ~455 ===")
+        ast.stmtList.forEachIndexed { index, stmt ->
+            if (stmt is VarDeclStmt && stmt.identifier.lexeme == "outer") {
+                println("Top-level VarDecl 'outer' at index $index, line ${stmt.identifier.lineNumber}")
+            }
+            if (stmt is Block) {
+                println("Block at index $index with ${stmt.stmtList. size} statements")
+                stmt.stmtList.forEach { innerStmt ->
+                    if (innerStmt is VarDeclStmt) {
+                        println("  - VarDecl '${innerStmt.identifier.lexeme}' at line ${innerStmt.identifier.lineNumber}")
+                    }
+                }
+            }
+        }
+        println("=== END DEBUG ===\n")
+
         val evaluator = Evaluator()
 
         for (stmt in ast.stmtList) {
-            evaluator.evaluate(stmt, isReplMode = false)
+            evaluator. evaluate(stmt, isReplMode = false)
         }
 
     } catch (e: java.io.FileNotFoundException) {
@@ -88,11 +106,11 @@ fun runFile(filename: String) {
         exitProcess(1)
     } catch (e: RuntimeError) {
         println(e.message)
-        e.printStackTrace()
+        e. printStackTrace()
         exitProcess(1)
     } catch (e: ParserError) {
         println(e.message)
-        e.printStackTrace()
+        e. printStackTrace()
         exitProcess(1)
     } catch (e: Exception) {
         println("Error: ${e.message}")
@@ -100,7 +118,6 @@ fun runFile(filename: String) {
         exitProcess(1)
     }
 }
-
 fun runRepl() {
     val buffer = InputBuffer()
     val executor = ReplExecutor()
@@ -135,6 +152,7 @@ fun runRepl() {
 
 //kotlinc @sources.txt -include-runtime -d PukiMo.jar
 //java -jar PukiMo.jar examples/test_pukimo.txt
+//java -jar PukiMo.jar examples/functions/kk.txt
 fun main(args: Array<String>) {
     if (args.isNotEmpty()) {
         runFile(args[0])
@@ -142,3 +160,4 @@ fun main(args: Array<String>) {
         runRepl()
     }
 }
+

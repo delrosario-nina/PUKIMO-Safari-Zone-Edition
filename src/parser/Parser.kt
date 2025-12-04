@@ -42,11 +42,23 @@ class Parser(
     }
 
     private fun parseStatement(): Stmt {
-        return if (tokenBuffer.check(TokenType.IF_KEYWORD)) {
+        return if (tokenBuffer.match(TokenType.IF_KEYWORD)) {
             parseIfStmt()
         } else {
             parseNonIfStmt()
         }
+    }
+
+    private fun parseIfStmt(): Stmt {
+        val keyword = tokenBuffer.previous()  // ✅ Use already-consumed token
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'")
+        val condition = parseExpression()
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after if condition")
+
+        val thenBlock = parseBlockOrError("Expected '{' to start 'if' block")
+        val elseBlock = parseElseBlock()
+
+        return IfStmt(condition, thenBlock, elseBlock)
     }
 
     private fun parseNonIfStmt(): Stmt {
@@ -83,32 +95,30 @@ class Parser(
     private fun parseForStmt(): ForStmt {
         val keyword = tokenBuffer.previous()
 
-        // Optionally consume parentheses
-        val hasParens = tokenBuffer.match(TokenType.LEFT_PAREN)
+        // MANDATORY parens (consistent with while/if/explore)
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'")
 
         val variable = consume(TokenType.IDENTIFIER, "Expected variable name in for loop")
         consume(TokenType.IN_KEYWORD, "Expected 'in' after variable")
 
         val start = parseExpression()
 
-        // Make 'to' clause optional
-        val end = if (tokenBuffer.match(TokenType.TO_KEYWORD)) {
+        val hasToKeyword = tokenBuffer. match(TokenType.TO_KEYWORD)
+        val end = if (hasToKeyword) {
             parseExpression()
         } else {
-            null  // No 'to' means iterating over collection/string
+            null
         }
 
-        // Only require closing paren if opening paren was present
-        if (hasParens) {
-            consume(TokenType.RIGHT_PAREN, "Expected ')' after for clause")
-        }
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after for clause")
 
         context.enterControlBlock()
         val body = parseBlock()
         context.exitControlBlock()
 
-        return ForStmt(keyword, variable, start, end, body)
+        return ForStmt(keyword, variable, start, end, body, isRangeLoop = hasToKeyword)
     }
+
     private fun parseBreakStmt(): BreakStmt {
         val keyword = tokenBuffer.previous()
         context.validateBreakStatement(keyword)
@@ -121,20 +131,6 @@ class Parser(
         context.validateContinueStatement(keyword)
         consume(TokenType. SEMICOLON, "Expected ';' after 'continue'")
         return ContinueStmt(keyword)
-    }
-
-    private fun parseIfStmt(): Stmt {
-        consume(TokenType.IF_KEYWORD, "Expected 'if' keyword")
-        consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'")
-        val condition = parseExpression()
-        consume(TokenType.RIGHT_PAREN, "Expected ')' after if condition")
-
-        context.enterControlBlock()
-        val thenBlock = parseBlockOrError("Expected '{' to start 'if' block")
-        val elseBlock = parseElseBlock()
-        context.exitControlBlock()
-
-        return IfStmt(condition, thenBlock, elseBlock)
     }
 
     private fun parseElseBlock(): Block?  {
@@ -236,11 +232,11 @@ class Parser(
     }
 
     private fun parseExploreStmt(): Stmt {
-        consume(TokenType.LEFT_PAREN, "Expected '(' after 'explore'")
+        consume(TokenType. LEFT_PAREN, "Expected '(' after 'explore'")
         val safariZoneIdent = consume(TokenType. IDENTIFIER, "Expected SafariZone variable name in 'explore'")
-        consume(TokenType.RIGHT_PAREN, "Expected ')' after SafariZone variable name in 'explore'")
+        consume(TokenType. RIGHT_PAREN, "Expected ')' after SafariZone variable name in 'explore'")
 
-        context.enterControlBlock()
+        context.enterControlBlock()  // Is this right?
         val block = parseBlock()
         context.exitControlBlock()
 
@@ -457,12 +453,25 @@ class Parser(
 
     private fun parseArgument(positional: MutableList<Expr>, named: MutableList<NamedArg>) {
         if (isNamedArgument()) {
+            // If we see ANY named argument, ALL arguments must be named
+            if (positional.isNotEmpty()) {
+                throw errorHandler.error(
+                    tokenBuffer.peek(),
+                    "Cannot mix positional and named arguments.  Use either all positional or all named arguments."
+                )
+            }
             named.add(parseNamedArgument())
         } else {
+            // If we see ANY positional argument, ALL arguments must be positional
+            if (named.isNotEmpty()) {
+                throw errorHandler.error(
+                    tokenBuffer.peek(),
+                    "Cannot mix positional and named arguments. Use either all positional or all named arguments."
+                )
+            }
             positional.add(parseExpression())
         }
     }
-
 
     private fun parseNamedArgument(): NamedArg {
         val name = tokenBuffer. advance()

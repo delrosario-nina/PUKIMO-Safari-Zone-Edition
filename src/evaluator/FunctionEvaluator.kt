@@ -7,7 +7,6 @@ import parser.*
  * Handles function definitions, calls, and returns.
  */
 class FunctionEvaluator(private val evaluator: Evaluator) {
-
     fun visitDefineStmt(stmt: DefineStmt): Any? {
         val function = createFunctionObject(stmt)
         evaluator.getEnvironment().define(stmt.name, function)
@@ -40,26 +39,39 @@ class FunctionEvaluator(private val evaluator: Evaluator) {
     }
 
     fun visitCallExpr(expr: CallExpr): Any? {
-        evaluator.getBuiltinFunctions().evaluate(expr, evaluator)?. let { return it }
+        // Check built-in functions FIRST (before evaluating arguments)
+        evaluator. getBuiltinFunctions().evaluate(expr, evaluator)?.let { return it }
 
         return when (val callee = expr.callee) {
             is PropertyAccessExpr -> evaluateMethodCall(expr)
             is VariableExpr -> {
-                val arguments = expr.args.map { it.accept(evaluator) }
+                // Evaluate arguments
+                val arguments = expr.args. map { it.accept(evaluator) }
 
                 // Try constructor
-                evaluator.getSafariZoneObjects().tryCreate(
-                    callee.identifier.lexeme,
+                evaluator.getSafariZoneObjects(). tryCreate(
+                    callee. identifier.lexeme,
                     arguments,
                     expr.namedArgs,
                     callee.identifier
                 ) ?: run {
-                    // Try user function
-                    val function = callee.accept(evaluator)
-                    if (function is FunctionObject) {
-                        callUserFunction(function, arguments)
-                    } else {
-                        throw evaluator.getErrorHandler(). error(Evaluator.EOF_TOKEN, "Not a callable function")
+                    // Try user function - need to look up in environment
+                    try {
+                        val function = evaluator.getEnvironment().get(callee.identifier)
+                        if (function is FunctionObject) {
+                            callUserFunction(function, arguments)
+                        } else {
+                            throw evaluator.getErrorHandler().error(
+                                callee.identifier,
+                                "'${callee.identifier.lexeme}' is not a function"
+                            )
+                        }
+                    } catch (e: RuntimeError) {
+                        // If not found in environment, re-throw with better message
+                        throw evaluator.getErrorHandler().error(
+                            callee.identifier,
+                            "Undefined function '${callee.identifier.lexeme}'"
+                        )
                     }
                 }
             }
@@ -68,12 +80,14 @@ class FunctionEvaluator(private val evaluator: Evaluator) {
                 if (function is FunctionObject) {
                     callUserFunction(function, expr.args. map { it.accept(evaluator) })
                 } else {
-                    throw evaluator.getErrorHandler().error(Evaluator. EOF_TOKEN, "Unknown function or not implemented")
+                    throw evaluator.getErrorHandler().error(
+                        Evaluator.EOF_TOKEN,
+                        "Not a callable function"
+                    )
                 }
             }
         }
     }
-
     private fun evaluateMethodCall(expr: CallExpr): Any? {
         val propertyExpr = expr.callee as PropertyAccessExpr
         val obj = propertyExpr.primaryWithSuffixes.accept(evaluator)
@@ -102,7 +116,10 @@ class FunctionEvaluator(private val evaluator: Evaluator) {
     }
 
     private fun executeFunction(function: FunctionObject, arguments: List<Any?>): Any? {
-        val functionEnvironment = Environment(enclosing = function.closure)
+        val functionEnvironment = Environment(
+            enclosing = function.closure,
+            errorHandler = evaluator.getErrorHandler()
+        )
         bindParameters(function. parameters, arguments, functionEnvironment)
 
         val previous = evaluator.getEnvironment()

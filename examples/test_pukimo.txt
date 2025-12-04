@@ -672,7 +672,7 @@ print("");
 
 :> Test 12.1: Team creation
 totalTests = totalTests + 1;
-var testTeam = Team("Ash", maxSize=6);
+var testTeam = Team("Ash", 6);
 if (testTeam. trainerName == "Ash" && testTeam.maxSize == 6) {
     print("12.1 PASS: Team creation");
     passedTests = passedTests + 1;
@@ -739,14 +739,14 @@ var foundMew = false;
 explore(exitZone) {
     if (encounter == "Mew") {
         foundMew = true;
-        run;
+        break;
     }
 }
 if (foundMew) {
-    print("13.2 PASS: Explore with run");
+    print("13.2 PASS: Explore with break");
     passedTests = passedTests + 1;
 } else {
-    print("13. 2 FAIL: Explore with run");
+    print("13. 2 FAIL: Explore with break");
     failedTests = failedTests + 1;
 }
 

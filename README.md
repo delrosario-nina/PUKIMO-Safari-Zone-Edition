@@ -66,7 +66,22 @@ PukiMO is dynamically typed.  The following types exist at runtime:
 - **PokemonCollection** – Internal collection type
 
 ---
+## Variable Scoping
 
+Variables can be shadowed in nested scopes:
+
+```javascript
+var outer = "global";
+
+{
+    var inner = "block scope";
+    print(outer);  :> "global" (reads from parent scope)
+
+    var outer = "shadowed";  :> New variable in block scope
+    print(outer);  :> "shadowed"
+}
+
+print(outer);  :> "global" (block scope doesn't affect outer)
 ## Functions
 
 ### User-Defined Functions
@@ -100,11 +115,11 @@ print(counter());  :> 2
 | Function | Description | Example |
 |----------|-------------|---------|
 | `length(x)` | Returns length of string or array | `length("Pikachu")` → `7` |
+| `push(array, item)` | Adds item to end of array | `push(arr, "Pikachu")` |
 | `readString()` | Reads user input as string | `var name = readString();` |
 | `readInt()` | Reads user input as integer | `var age = readInt();` |
 | `contains(array, item)` | Checks if array contains item | `contains(team, "Pikachu")` |
 | `concat(arr1, arr2)` | Concatenates two arrays | `concat([1, 2], [3, 4])` |
-
 ---
 
 ## SafariZone Object
@@ -255,9 +270,8 @@ explore(safariZone) {
     :> 'encounter' variable is automatically available here
     print("Wild " + encounter + " appeared!");
     
-    :> Use 'run' to exit early
     if (encounter == "Mew") {
-        run;
+        break;
     }
 }
 ```
@@ -293,7 +307,7 @@ explore(zone) {
             :> Exit if team is full
             if (team. pokemonCount >= team.maxSize) {
                 print("Team is full!");
-                run;
+                break;
             }
         }
     }
@@ -348,6 +362,8 @@ print("Final team: " + team.pokemon->list());
 
 ## Arrays
 
+## Arrays
+
 Arrays are mutable, dynamically-sized lists.
 
 ```javascript
@@ -360,6 +376,12 @@ print(team[0]);  :> "Pikachu"
 :> Assignment
 team[1] = "Ivysaur";
 
+:> Push (add to end)
+var empty = [];
+push(empty, "Pikachu");
+push(empty, "Charmander");
+print(empty);  :> ["Pikachu", "Charmander"]
+
 :> Length
 print(length(team));  :> 3
 
@@ -371,8 +393,6 @@ if (contains(team, "Pikachu")) {
 :> Concatenation
 var more = ["Squirtle", "Jigglypuff"];
 var all = concat(team, more);
-```
-
 ---
 
 ## Control Flow
@@ -496,7 +516,7 @@ explore(zone) {
             
             if (team.pokemonCount >= team.maxSize) {
                 print("Team is full!");
-                run;
+                break;
             }
         } else {
             print(encounter + " escaped!");
@@ -577,7 +597,6 @@ statement         → ifStmt
 
 nonIfStmt         → varDecl
                   | printStmt
-                  | runStmt
                   | whileStmt
                   | forStmt
                   | breakStmt
@@ -627,8 +646,8 @@ continueStmt      → "continue" ";"
 returnStmt        → "return" expression?  ";"
 
 exploreStmt       → "explore" "(" IDENTIFIER ")" block
+              // Inside block: 'encounter' is implicitly bound (read-only)
 
-runStmt           → "run" ";"
 ```
 
 ---
@@ -680,16 +699,16 @@ primary           → NUMERIC_LITERAL
 
 constructorCall   → ("SafariZone" | "Team") "(" argumentList ")"
 
-arrayLiteral      → "[" (expression ("," expression)*)? "]"
-```
+arrayLiteral → "[" elementList "]"
+elementList  → ε | expression ("," expression)*```
 
 ---
 
 ### Arguments
 
 ```
-argumentList      → ")" 
-                  | argument ("," argument)* ")"
+argumentList      →  ε | argument ("," argument)*
+
 
 argument          → namedArgument
                   | expression
@@ -731,7 +750,7 @@ KEYWORD           → "var" | "define" | "return"
                   | "break" | "continue" 
                   | "print"
                   | "true" | "false" | "null"
-                  | "explore" | "run"
+                  | "explore" 
                   | "SafariZone" | "Team"
 ```
 
@@ -760,7 +779,6 @@ BREAK_KEYWORD      → "break"
 CONTINUE_KEYWORD   → "continue"
 PRINT_KEYWORD      → "print"
 EXPLORE_KEYWORD    → "explore"
-RUN_KEYWORD        → "run"
 SAFARI_ZONE        → "SafariZone"
 TEAM               → "Team"
 
@@ -948,16 +966,17 @@ These are validated during parsing or evaluation:
 1. **Variables must be declared before use**
 2.  **`return` only valid inside functions**
 3. **`break` and `continue` only valid inside loops**
-4. **`run` only valid inside `explore` blocks**
-5. **`encounter` only valid inside `explore` blocks** (read-only)
-6. **Cannot assign to read-only identifiers** (`encounter`)
-7. **Cannot use reserved words as variable names** (`encounter` in certain contexts)
-8. **Property access (`.`) vs method calls (`->`)**:
+4. **`encounter` only valid inside `explore` blocks** (read-only)
+5. **Cannot assign to read-only identifiers** (`encounter`)
+6. **Cannot use reserved words as variable names** (`encounter` in certain contexts)
+7. **Property access (`.`) vs method calls (`->`)**:
     - `. ` must NOT be followed by `(`
     - `->` must BE followed by `(`
-9. **Array indices must be integers** (runtime check)
-10. **Constructor names are special-cased** (`SafariZone`, `Team`)
-
+8. **Array indices must be integers** (runtime check)
+9. **Constructor names are special-cased** (`SafariZone`, `Team`)
+10. **Cannot mix positional and named arguments in the same call**
+    - Once a named argument is used, ALL arguments must be named
+    - Once a positional argument is used, ALL arguments must be positional
 ---
 
 ### Error Recovery
@@ -975,7 +994,7 @@ The parser implements **synchronization** on errors:
 ```ebnf
 program    ::= statement* EOF
 statement  ::= ifStmt | nonIfStmt
-nonIfStmt  ::= varDecl | printStmt | runStmt | whileStmt | forStmt 
+nonIfStmt  ::= varDecl | printStmt | whileStmt | forStmt 
              | breakStmt | continueStmt | exploreStmt | returnStmt 
              | defineStmt | block | exprStmt
 
@@ -987,10 +1006,9 @@ forStmt    ::= "for" "(" IDENTIFIER "in" expression "to" expression ")" block
 defineStmt ::= "define" IDENTIFIER "(" (IDENTIFIER ("," IDENTIFIER)*)?  ")" block
 returnStmt ::= "return" expression? ";"
 exploreStmt::= "explore" "(" IDENTIFIER ")" block
-runStmt    ::= "run" ";"
 breakStmt  ::= "break" ";"
 continueStmt ::= "continue" ";"
-exprStmt   ::= expression ";"? 
+exprStmt   ::= expression ";"
 
 expression ::= assignExpr
 assignExpr ::= orExpr ("=" assignExpr)?

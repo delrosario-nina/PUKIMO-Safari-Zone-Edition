@@ -22,49 +22,96 @@ class LoopEvaluator(private val evaluator: Evaluator) {
     }
 
     fun visitForStmt(stmt: ForStmt): Any? {
-        val startVal = stmt.start.accept(evaluator)
-
-        // If no 'to' clause, iterate over collection/string
-        if (stmt.end == null) {
-            return when (startVal) {
-                is String -> executeStringForLoop(stmt, startVal)
-                is MutableList<*> -> executeArrayForLoop(stmt, startVal)
-                else -> throw evaluator.getErrorHandler().typeError(
-                    stmt.keyword,
-                    "Can only iterate over strings or arrays without 'to', got ${startVal?. javaClass?.simpleName ?: "null"}"
-                )
-            }
+        return if (stmt.isRangeLoop) {
+            // Range loop: for i in 0 to 10
+            executeRangeLoop(stmt)
+        } else {
+            // Collection loop: for item in collection
+            executeCollectionLoop(stmt)
         }
-
-        // If 'to' clause exists, evaluate both start and end
-        val endVal = stmt.end.accept(evaluator)
-
-        // Check if still using string/array with 'to' (for backwards compatibility)
-        if (startVal is String) {
-            return executeStringForLoop(stmt, startVal)
-        }
-        if (startVal is MutableList<*>) {
-            return executeArrayForLoop(stmt, startVal)
-        }
-
-        // Otherwise, treat as integer range
-        val range = evaluateForRange(startVal, endVal, stmt.keyword)
-        return executeForLoop(stmt, range)
     }
 
-    private fun executeArrayForLoop(stmt: ForStmt, array: MutableList<*>): Any? {
-        val loopEnvironment = Environment(enclosing = evaluator.getEnvironment())
+    private fun executeRangeLoop(stmt: ForStmt): Any? {
+        val startVal = stmt.start.accept(evaluator)
+        val endVal = stmt.end?.accept(evaluator)
+            ?: throw evaluator.getErrorHandler().error(stmt.keyword, "Range loop requires 'to' clause")
+
+        // Validate both are integers
+        if (startVal !is Int) {
+            throw evaluator.getErrorHandler().typeError(
+                stmt.keyword,
+                "Range loop start must be an integer, got ${startVal?.javaClass?.simpleName ?: "null"}"
+            )
+        }
+        if (endVal !is Int) {
+            throw evaluator. getErrorHandler().typeError(
+                stmt.keyword,
+                "Range loop end must be an integer, got ${endVal?.javaClass?.simpleName ?: "null"}"
+            )
+        }
+
+        val range = startVal.. endVal
+        return executeIntegerLoop(stmt, range)
+    }
+
+    private fun executeCollectionLoop(stmt: ForStmt): Any? {
+        val collection = stmt.start.accept(evaluator)
+
+        return when (collection) {
+            is String -> executeStringLoop(stmt, collection)
+            is MutableList<*> -> executeArrayLoop(stmt, collection)
+            else -> throw evaluator.getErrorHandler().typeError(
+                stmt.keyword,
+                "Can only iterate over strings or arrays, got ${collection?.javaClass?. simpleName ?: "null"}"
+            )
+        }
+    }
+
+    private fun executeIntegerLoop(stmt: ForStmt, range: IntRange): Any? {
+        val loopEnvironment = Environment(
+            enclosing = evaluator. getEnvironment(),
+            errorHandler = evaluator.getErrorHandler()
+        )
         val previous = evaluator.getEnvironment()
 
         try {
             evaluator. setEnvironment(loopEnvironment)
-            evaluator.getEnvironment().define(stmt.variable, array. firstOrNull())
+            evaluator.getEnvironment().define(stmt.variable, range.first)
+
+            for (i in range) {
+                evaluator.getEnvironment().assign(stmt.variable, i)
+
+                try {
+                    stmt.body. accept(evaluator)
+                } catch (_: ContinueException) {
+                    continue
+                } catch (_: BreakException) {
+                    break
+                }
+            }
+            return null
+        } finally {
+            evaluator.setEnvironment(previous)
+        }
+    }
+
+    private fun executeArrayLoop(stmt: ForStmt, array: MutableList<*>): Any? {
+        val loopEnvironment = Environment(
+            enclosing = evaluator. getEnvironment(),
+            errorHandler = evaluator.getErrorHandler()
+        )
+        val previous = evaluator.getEnvironment()
+
+        try {
+            evaluator.setEnvironment(loopEnvironment)
+            // Initialize with first element or null
+            evaluator.getEnvironment(). define(stmt.variable, array. firstOrNull())
 
             for (element in array) {
                 evaluator.getEnvironment().assign(stmt.variable, element)
 
                 try {
-                    stmt. body.accept(evaluator)
+                    stmt.body. accept(evaluator)
                 } catch (_: ContinueException) {
                     continue
                 } catch (_: BreakException) {
@@ -77,52 +124,19 @@ class LoopEvaluator(private val evaluator: Evaluator) {
         }
     }
 
-    private fun evaluateForRange(startVal: Any?, endVal: Any?, token: Token): IntRange {
-        if (startVal !is Int) {
-            throw evaluator.getErrorHandler().typeError(token, "For loop start must be an integer or string")
-        }
-        if (endVal !is Int) {
-            throw evaluator. getErrorHandler().typeError(token, "For loop end must be an integer")
-        }
-
-        return startVal.. endVal
-    }
-
-    private fun executeStringForLoop(stmt: ForStmt, str: String): Any? {
-        val loopEnvironment = Environment(enclosing = evaluator.getEnvironment())
-        val previous = evaluator.getEnvironment()
-
-        try {
-            evaluator. setEnvironment(loopEnvironment)
-            evaluator.getEnvironment().define(stmt.variable, "")
-
-            for (char in str) {
-                evaluator.getEnvironment().assign(stmt.variable, char. toString())
-
-                try {
-                    stmt.body.accept(evaluator)
-                } catch (_: ContinueException) {
-                    continue
-                } catch (_: BreakException) {
-                    break
-                }
-            }
-            return null
-        } finally {
-            evaluator.setEnvironment(previous)
-        }
-    }
-
-    private fun executeForLoop(stmt: ForStmt, range: IntRange): Any? {
-        val loopEnvironment = Environment(enclosing = evaluator.getEnvironment())
+    private fun executeStringLoop(stmt: ForStmt, str: String): Any? {
+        val loopEnvironment = Environment(
+            enclosing = evaluator.getEnvironment(),
+            errorHandler = evaluator.getErrorHandler()
+        )
         val previous = evaluator. getEnvironment()
 
         try {
             evaluator.setEnvironment(loopEnvironment)
-            evaluator.getEnvironment().define(stmt.variable, range.first)
+            evaluator.getEnvironment().define(stmt.variable, "")
 
-            for (i in range) {
-                evaluator.getEnvironment().assign(stmt.variable, i)
+            for (char in str) {
+                evaluator.getEnvironment().assign(stmt.variable, char. toString())
 
                 try {
                     stmt.body.accept(evaluator)

@@ -31,7 +31,13 @@ class StatementEvaluator(private val evaluator: Evaluator) {
     }
 
     fun visitBlock(block: Block): Any? {
-        return executeBlock(block.stmtList, Environment(enclosing = evaluator.getEnvironment()))
+        return executeBlock(
+            block.stmtList,
+            Environment(
+                enclosing = evaluator. getEnvironment(),
+                errorHandler = evaluator.getErrorHandler()
+            )
+        )
     }
 
     fun executeBlock(statements: List<Stmt>, blockEnvironment: Environment): Any? {
@@ -75,7 +81,10 @@ class StatementEvaluator(private val evaluator: Evaluator) {
 
     // In StatementEvaluator.kt
     private fun executeExploreBlock(stmt: ExploreStmt, safariZone: SafariZoneObject): Any? {
-        val exploreEnvironment = Environment(enclosing = evaluator.getEnvironment())
+        val exploreEnvironment = Environment(
+            enclosing = evaluator.getEnvironment(),
+            errorHandler = evaluator.getErrorHandler()
+        )
         exploreEnvironment.define(stmt.safariZoneVar, safariZone)
         exploreEnvironment.define(Evaluator.ENCOUNTER_TOKEN, null)
 

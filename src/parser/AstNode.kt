@@ -96,7 +96,8 @@ data class ForStmt(
     val variable: Token,
     val start: Expr,
     val end: Expr?,
-    val body: Block
+    val body: Block,
+    val isRangeLoop: Boolean = false
 ) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitForStmt(this)
 }
