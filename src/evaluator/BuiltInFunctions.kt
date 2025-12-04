@@ -5,6 +5,7 @@ import parser.*
 
 /**
  * Handles evaluation of built-in functions.
+ *
  */
 class BuiltinFunctions(private val errorHandler: EvaluatorErrorHandler) {
 

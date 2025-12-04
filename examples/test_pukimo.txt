@@ -8,7 +8,7 @@ print("║  PukiMO Language - Master Test Suite  ║");
 print("╚════════════════════════════════════════╝");
 print("");
 
-var totalTests = 0;
+var totalTests = -1;
 var passedTests = 0;
 var failedTests = 0;
 

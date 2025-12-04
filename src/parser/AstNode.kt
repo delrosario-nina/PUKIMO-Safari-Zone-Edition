@@ -97,7 +97,7 @@ data class ForStmt(
     val keyword: Token,
     val variable: Token,
     val start: Expr,
-    val end: Expr,
+    val end: Expr?,
     val body: Block
 ) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitForStmt(this)

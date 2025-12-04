@@ -41,7 +41,11 @@ class AstPrinter : AstVisitor<String> {
         "(while ${stmt.condition.accept(this)} ${stmt.body.accept(this)})"
 
     override fun visitForStmt(stmt: ForStmt): String =
-        "(for ${stmt.variable.lexeme} in ${stmt.start.accept(this)} to ${stmt.end.accept(this)} ${stmt.body.accept(this)})"
+        if (stmt.end != null) {
+            "(for ${stmt.variable.lexeme} in ${stmt. start.accept(this)} to ${stmt.end.accept(this)} ${stmt.body.accept(this)})"
+        } else {
+            "(for ${stmt.variable. lexeme} in ${stmt.start.accept(this)} ${stmt. body.accept(this)})"
+        }
 
     override fun visitBreakStmt(stmt: BreakStmt): String =
         "(break)"

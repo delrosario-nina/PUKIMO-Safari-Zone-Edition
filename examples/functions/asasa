@@ -1,9 +1,0 @@
-define makePrinter(prefix:string) {
-    define mprint(message) {
-        print (prefix + ":" + message);
-    }
-    return mprint;
-}
-
-var errorPrinter = makePrinter("ERROR");
-var infoPrinter = makePrinter("INFO");

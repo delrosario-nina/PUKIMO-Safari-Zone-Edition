@@ -83,16 +83,20 @@ class Parser(
 
     private fun parseForStmt(): ForStmt {
         val keyword = tokenBuffer.previous()
-        consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'")
 
-        val variable = consume(TokenType. IDENTIFIER, "Expected variable name in for loop")
+        val variable = consume(TokenType.IDENTIFIER, "Expected variable name in for loop")
         consume(TokenType.IN_KEYWORD, "Expected 'in' after variable")
 
         val start = parseExpression()
-        consume(TokenType. TO_KEYWORD, "Expected 'to' in range")
-        val end = parseExpression()
 
-        consume(TokenType.RIGHT_PAREN, "Expected ')' after for clause")
+        // Make 'to' clause optional
+        val end = if (tokenBuffer. match(TokenType.TO_KEYWORD)) {
+            parseExpression()
+        } else {
+            null  // No 'to' means iterating over collection/string
+        }
+
+        // Remove: consume(TokenType.RIGHT_PAREN, "Expected ')' after for clause")
 
         context.enterControlBlock()
         val body = parseBlock()

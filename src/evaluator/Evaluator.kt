@@ -90,6 +90,10 @@ class Evaluator : AstVisitor<Any? > {
         return node.accept(this)
     }
 
+    /**
+     * Visits the root Program node and evaluates each statement in sequence.
+     * Returns the value of the last evaluated statement.
+     */
     override fun visitProgram(program: Program): Any? {
         var lastValue: Any? = null
         for (stmt in program.stmtList) {
@@ -98,6 +102,10 @@ class Evaluator : AstVisitor<Any? > {
         return lastValue
     }
 
+    /**
+     * Visits an expression statement.
+     * Evaluates the expression and, in REPL mode, prints the result if not null.
+     */
     override fun visitExprStmt(stmt: ExprStmt): Any? {
         val result = stmt.expression.accept(this)
 
@@ -108,22 +116,39 @@ class Evaluator : AstVisitor<Any? > {
         return result
     }
 
+    /**
+     * Visits a print statement.
+     * Evaluates the expression and prints its string representation.
+     */
     override fun visitPrintStmt(stmt: PrintStmt): Any? {
         val value = stmt.expression.accept(this)
         println(stringify(value))
         return null
     }
 
+    /**
+     * Visits a variable declaration statement.
+     * Evaluates the initializer expression and defines the variable in the current environment.
+     */
     override fun visitVarDeclStmt(stmt: VarDeclStmt): Any? {
         val value = stmt.expression.accept(this)
         environment.define(stmt. identifier, value)
         return null
     }
 
+    /**
+     * Visits a block statement.
+     * Executes the block in a new environment scope.
+     */
     override fun visitBlock(block: Block): Any? {
         return executeBlock(block.stmtList, Environment(enclosing = environment))
     }
 
+    /**
+     * Executes a list of statements within a given block environment.
+     * Temporarily switches the current environment to the block's environment
+     * and restores the previous environment afterward.
+     */
     private fun executeBlock(statements: List<Stmt>, blockEnvironment: Environment): Any? {
         val previous = environment
         try {
@@ -147,8 +172,10 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
-    // ========== Loop Statements ==========
-
+    /** Visits a while statement.
+     * Evaluates the condition and repeatedly executes the body while the condition is truthy.
+     * Supports 'break' and 'continue' control flow within the loop body.
+     */
     override fun visitWhileStmt(stmt: WhileStmt): Any? {
         while (isTruthy(stmt.condition.accept(this))) {
             try {
@@ -162,40 +189,66 @@ class Evaluator : AstVisitor<Any? > {
         return null
     }
 
-    override fun visitForStmt(stmt: ForStmt): Any? {
-        val range = evaluateForRange(stmt)
+    /** Visits a for statement.
+     * Supports three styles:
+     * - for i in 0 to 10 (integer range)
+     * - for char in stringVar (string iteration)
+     * - for item in arrayVar (array iteration)
+     * Supports 'break' and 'continue' control flow within the loop body.
+     */
+    override fun visitForStmt(stmt: ForStmt): Any?  {
+        val startVal = stmt.start.accept(this)
+
+        // If no 'to' clause, iterate over collection/string
+        if (stmt.end == null) {
+            return when (startVal) {
+                is String -> executeStringForLoop(stmt, startVal)
+                is MutableList<*> -> executeArrayForLoop(stmt, startVal)
+                else -> throw errorHandler. typeError(
+                    stmt.keyword,
+                    "Can only iterate over strings or arrays without 'to', got ${startVal?. javaClass?.simpleName ?: "null"}"
+                )
+            }
+        }
+
+        // If 'to' clause exists, evaluate both start and end
+        val endVal = stmt.end.accept(this)
+
+        // Check if still using string/array with 'to' (for backwards compatibility)
+        if (startVal is String) {
+            return executeStringForLoop(stmt, startVal)
+        }
+        if (startVal is MutableList<*>) {
+            return executeArrayForLoop(stmt, startVal)
+        }
+
+        // Otherwise, treat as integer range
+        val range = evaluateForRange(startVal, endVal, stmt. keyword)
         return executeForLoop(stmt, range)
     }
 
-    private fun evaluateForRange(stmt: ForStmt): IntRange {
-        val startVal = stmt.start. accept(this)
-        val endVal = stmt.end.accept(this)
-
-        if (startVal !is Int) {
-            throw errorHandler.typeError(stmt.keyword, "For loop start must be an integer")
-        }
-        if (endVal !is Int) {
-            throw errorHandler.typeError(stmt.keyword, "For loop end must be an integer")
-        }
-
-        return startVal..endVal
-    }
-
-    private fun executeForLoop(stmt: ForStmt, range: IntRange): Any? {
+    /** Executes a for loop that iterates over an array's elements.
+     * Creates a new environment scope for the loop variable,
+     * assigns each element to the loop variable,
+     * and executes the loop body.
+     * Supports 'break' and 'continue' control flow within the loop body.
+     */
+    private fun executeArrayForLoop(stmt: ForStmt, array: MutableList<*>): Any? {
         val loopEnvironment = Environment(enclosing = environment)
         val previous = environment
 
         try {
             environment = loopEnvironment
 
+            // Initialize with first element or null
+            environment.define(stmt.variable, array.firstOrNull())
 
-            environment.define(stmt.variable, range.first)
-
-            for (i in range) {
-                environment.assign(stmt.variable, i)
+            for (element in array) {
+                // Assign the current element
+                environment.assign(stmt.variable, element)
 
                 try {
-                    stmt.body. accept(this)
+                    stmt.body.accept(this)
                 } catch (_: ContinueException) {
                     continue
                 } catch (_: BreakException) {
@@ -208,22 +261,113 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /** Evaluates the start and end expressions of a for loop to produce an IntRange.
+     * Throws a type error if either expression does not evaluate to an integer.
+     */
+    private fun evaluateForRange(startVal: Any?, endVal: Any?, token: Token): IntRange {
+        if (startVal !is Int) {
+            throw errorHandler.typeError(token, "For loop start must be an integer or string")
+        }
+        if (endVal !is Int) {
+            throw errorHandler.typeError(token, "For loop end must be an integer")
+        }
+
+        return startVal..endVal
+    }
+
+    /** Executes a for loop that iterates over a string's characters.
+     * Creates a new environment scope for the loop variable,
+     * assigns each character to the loop variable,
+     * and executes the loop body.
+     * Supports 'break' and 'continue' control flow within the loop body.
+     */
+    private fun executeStringForLoop(stmt: ForStmt, str: String): Any? {
+        val loopEnvironment = Environment(enclosing = environment)
+        val previous = environment
+
+        try {
+            environment = loopEnvironment
+
+            // Initialize with empty string
+            environment.define(stmt.variable, "")
+
+            for (char in str) {
+                // Assign the current character as a string
+                environment.assign(stmt.variable, char.toString())
+
+                try {
+                    stmt.body.accept(this)
+                } catch (_: ContinueException) {
+                    continue
+                } catch (_: BreakException) {
+                    break
+                }
+            }
+            return null
+        } finally {
+            environment = previous
+        }
+    }
+
+    /** Executes the body of a for loop over the specified integer range.
+     * Creates a new environment scope for the loop variable,
+     * assigns the loop variable for each iteration,
+     * and executes the loop body.
+     * Supports 'break' and 'continue' control flow within the loop body.
+     */
+    private fun executeForLoop(stmt: ForStmt, range: IntRange): Any? {
+        val loopEnvironment = Environment(enclosing = environment)
+        val previous = environment
+
+        try {
+            environment = loopEnvironment
+            environment.define(stmt.variable, range.first)
+
+            for (i in range) {
+                environment.assign(stmt.variable, i)
+
+                try {
+                    stmt.body.accept(this)
+                } catch (_: ContinueException) {
+                    continue
+                } catch (_: BreakException) {
+                    break
+                }
+            }
+            return null
+        } finally {
+            environment = previous
+        }
+    }
+
+    /** Visits a break statement.
+     * Throws a BreakException to signal loop termination.
+     */
     override fun visitBreakStmt(stmt: BreakStmt): Any? {
         throw BreakException()
     }
 
+    /** Visits a continue statement.
+     * Throws a ContinueException to signal skipping to the next loop iteration.
+     */
     override fun visitContinueStmt(stmt: ContinueStmt): Any? {
         throw ContinueException()
     }
 
-    // ========== Function Definition ==========
-
+    /**
+     * Visits a function definition statement.
+     * Creates a FunctionObject and defines it in the current environment.
+     */
     override fun visitDefineStmt(stmt: DefineStmt): Any? {
         val function = createFunctionObject(stmt)
         environment.define(stmt. name, function)
         return null
     }
 
+    /**
+     * Creates a FunctionObject representing a user-defined function.
+     * Captures the current environment as the function's closure.
+     */
     private fun createFunctionObject(stmt: DefineStmt): FunctionObject {
         return FunctionObject(
             name = stmt.name,
@@ -233,13 +377,18 @@ class Evaluator : AstVisitor<Any? > {
         )
     }
 
-    // ========== Explore Statement ==========
-
+    /** Visits an explore statement.
+     * Retrieves the SafariZone object and executes the explore block.
+     */
     override fun visitExploreStmt(stmt: ExploreStmt): Any?  {
         val safariZone = getSafariZoneObject(stmt. safariZoneVar)
         return executeExploreBlock(stmt, safariZone)
     }
 
+    /**
+     * Retrieves a SafariZoneObject from the environment by variable token.
+     * Throws a type error if the variable is not a SafariZoneObject.
+     */
     private fun getSafariZoneObject(token: Token): SafariZoneObject {
         val obj = environment.get(token)
         if (obj !is SafariZoneObject) {
@@ -251,6 +400,13 @@ class Evaluator : AstVisitor<Any? > {
         return obj
     }
 
+    /**
+     * Executes the explore block within the context of the given SafariZoneObject.
+     * Sets up a new environment with the safari zone variable and encounter variable.
+     * Iterates through the turns, randomly selecting encounters and executing the block.
+     * Handles early exit via RunException and reports when turns are exhausted.
+     * Only runs when turns, balls, and available Pokémon are present.
+     */
     private fun executeExploreBlock(stmt: ExploreStmt, safariZone: SafariZoneObject): Any? {
         val exploreEnvironment = Environment(enclosing = environment)
         exploreEnvironment.define(stmt. safariZoneVar, safariZone)
@@ -291,6 +447,9 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /**
+     * Retrieves the PokemonCollection from a SafariZoneObject.
+     */
     private fun getPokemonCollection(safariZone: SafariZoneObject): PokemonCollection {
         return safariZone.getProperty(
             "pokemon",
@@ -299,14 +458,20 @@ class Evaluator : AstVisitor<Any? > {
         ) as PokemonCollection
     }
 
-    // ========== Return & Run ==========
-
+    /** Visits a return statement.
+     * Validates that the return is within a function context,
+     * evaluates the return value expression (if any),
+     * and throws a ReturnException to signal function return.
+     */
     override fun visitReturnStmt(stmt: ReturnStmt): Any? {
         validateReturnContext(stmt. keyword)
         val value = stmt. value?. accept(this)
         throw ReturnException(value)
     }
 
+    /** Validates that a return statement is within a function context.
+     * Throws a runtime error if the return is outside of a function.
+     */
     private fun validateReturnContext(token: Token) {
         if (! inUserFunction) {
             throw errorHandler.error(
@@ -317,21 +482,38 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /** Visits a run statement.
+     * Throws a RunException to signal early exit from an explore block.
+     */
     override fun visitRunStmt(stmt: RunStmt): Any? {
         throw RunException()
     }
 
-    // ========== Expressions ==========
-
+    /**
+     * Visits a literal expression.
+     * Returns the literal value directly.
+     */
     override fun visitLiteralExpr(expr: LiteralExpr): Any? = expr.value
 
+    /**
+     * Visits a variable expression.
+     * Retrieves the variable's value from the environment.
+     */
     override fun visitVariableExpr(expr: VariableExpr): Any? = environment.get(expr.identifier)
 
+    /**
+     * Visits a unary expression.
+     * Evaluates the operand and applies the unary operator.
+     */
     override fun visitUnaryExpr(expr: UnaryExpr): Any? {
         val operand = expr.right.accept(this)
         return evaluateUnaryOperation(expr.operator, operand)
     }
 
+    /**
+     * Evaluates a unary operation based on the operator type.
+     * Supports negation for numbers and logical NOT for booleans.
+     */
     private fun evaluateUnaryOperation(operator: Token, operand: Any?): Any?  {
         return when (operator.type) {
             TokenType.MINUS -> negateNumber(operator, operand)
@@ -344,6 +526,10 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /**
+     * Negates a numeric operand.
+     * Throws a type error if the operand is not a number.
+     */
     private fun negateNumber(operator: Token, operand: Any? ): Int {
         if (operand !is Int) {
             throw errorHandler.typeError(operator, "Operand must be a number")
@@ -351,6 +537,11 @@ class Evaluator : AstVisitor<Any? > {
         return -operand
     }
 
+    /**
+     * Visits a binary expression.
+     * Evaluates the left and right operands and applies the binary operator.
+     * Short-circuits logical AND and OR operators for efficiency.
+     */
     override fun visitBinaryExpr(expr: BinaryExpr): Any? {
         if (expr.operator.type == TokenType.AND) {
             return evaluateAndOperator(expr)
@@ -364,24 +555,38 @@ class Evaluator : AstVisitor<Any? > {
         return arithmeticEvaluator.evaluate(left, expr.operator, right)
     }
 
+    /**
+     * Evaluates a logical AND operation with short-circuiting
+     */
     private fun evaluateAndOperator(expr: BinaryExpr): Boolean {
         val left = expr. left.accept(this)
         if (!isTruthy(left)) return false
         return isTruthy(expr.right.accept(this))
     }
 
+    /**
+     * Evaluates a logical OR operation with short-circuiting.
+     */
     private fun evaluateOrOperator(expr: BinaryExpr): Boolean {
         val left = expr.left.accept(this)
         if (isTruthy(left)) return true
         return isTruthy(expr.right.accept(this))
     }
 
+    /**
+     * Visits an assignment expression.
+     * Evaluates the value expression and assigns it to the target variable or property.
+     */
     override fun visitAssignExpr(expr: AssignExpr): Any? {
         val value = expr.value.accept(this)
         performAssignment(expr. target, value, expr.equals)
         return value
     }
 
+    /**
+     * Performs the assignment to the target expression.
+     * Supports variable assignments, property assignments, and array element assignments.
+     */
     private fun performAssignment(target: Expr, value: Any?, token: Token) {
         when (target) {
             is VariableExpr -> environment.assign(target.identifier, value)
@@ -391,6 +596,10 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /**
+     * Assigns a value to a property of an object.
+     * Validates that the target is an object and sets the property.
+     */
     private fun assignToProperty(target: PropertyAccessExpr, value: Any?, token: Token) {
         val obj = target.primaryWithSuffixes.accept(this)
         if (obj !is SafariZoneObjectInterface) {
@@ -399,24 +608,37 @@ class Evaluator : AstVisitor<Any? > {
         obj. setProperty(target.identifier.lexeme, value, errorHandler, target.identifier)
     }
 
+    /**
+     * Assigns a value to an element of an array.
+     * Validates that the target is an array and sets the element at the specified index.
+     */
     private fun assignToArrayElement(target: ArrayAccessExpr, value: Any?, token: Token) {
         val array = target.array. accept(this)
         val index = target.index.accept(this)
         performArrayAssignment(array, index, value, token)
     }
 
-    // ========== Array Expressions ==========
-
+    /**
+     * Maps the elements into a mutable list
+     */
     override fun visitArrayLiteralExpr(expr: ArrayLiteralExpr): Any?  {
         return expr.elements.map { it. accept(this) }. toMutableList()
     }
 
+    /**
+     * Visits an array access expression.
+     * Evaluates the array and index expressions and retrieves the element at the specified index.
+     */
     override fun visitArrayAccessExpr(expr: ArrayAccessExpr): Any? {
         val array = expr.array.accept(this)
         val index = expr.index. accept(this)
         return performArrayAccess(array, index, expr.leftBracket)
     }
 
+    /**
+     * Visits an array assignment expression.
+     * Evaluates the array, index, and value expressions and assigns the value at the specified
+     */
     override fun visitArrayAssignExpr(expr: ArrayAssignExpr): Any? {
         val array = expr.array.accept(this)
         val index = expr.index.accept(this)
@@ -424,27 +646,84 @@ class Evaluator : AstVisitor<Any? > {
         return performArrayAssignment(array, index, value, expr.leftBracket)
     }
 
+    /**
+     * Performs array/string access by validating the type and index,
+     * then returning the element/character at the specified index.
+     */
     private fun performArrayAccess(array: Any?, index: Any?, token: Token): Any? {
-        validateArrayType(array, token)
-        val validIndex = validateArrayIndex(array as MutableList<*>, index, token)
-        return array[validIndex]
+        return when (array) {
+            is MutableList<*> -> {
+                val validIndex = validateArrayIndex(array, index, token)
+                array[validIndex]
+            }
+            is String -> {
+                val validIndex = validateStringIndex(array, index, token)
+                array[validIndex]. toString()  // Return single character as string
+            }
+            else -> throw errorHandler.typeError(
+                token,
+                "Can only index arrays and strings, got ${array?. javaClass?.simpleName ?: "null"}"
+            )
+        }
     }
 
+    /**
+     * Validates that the given index is an integer within the bounds of the string.
+     * Throws a type error if the index is not an integer,
+     * or an error if the index is out of bounds.
+     */
+    private fun validateStringIndex(str: String, index: Any?, token: Token): Int {
+        if (index !is Int) {
+            throw errorHandler.typeError(token, "String index must be an integer")
+        }
+        if (index < 0 || index >= str. length) {
+            throw errorHandler.error(
+                token,
+                "String index $index out of bounds (length ${str.length})"
+            )
+        }
+        return index
+    }
+
+    /**
+     * Performs array assignment by validating the array type and index,
+     * then setting the element at the specified index to the given value.
+     * Strings cannot be assigned to because they are immutable.
+     */
     private fun performArrayAssignment(array: Any?, index: Any?, value: Any?, token: Token): Any? {
+        // Disallow string assignment (strings are immutable)
+        if (array is String) {
+            throw errorHandler.error(
+                token,
+                "Strings are immutable and cannot be modified.  Use string concatenation instead."
+            )
+        }
+
         validateArrayType(array, token)
         val validIndex = validateArrayIndex(array as MutableList<*>, index, token)
 
-        @Suppress("UNCHECKED_CAST")
         (array as MutableList<Any?>)[validIndex] = value
         return value
     }
 
+    /**
+     * Validates that the given value is an array (MutableList).
+     * Throws a type error if the value is not an array.
+     */
     private fun validateArrayType(array: Any?, token: Token) {
         if (array !is MutableList<*>) {
-            throw errorHandler.typeError(token, "Can only index arrays")
+            throw errorHandler.typeError(
+                token,
+                "Can only assign to arrays, not ${array?.javaClass?.simpleName ?: "null"}"
+            )
         }
     }
 
+    /**
+     * Validates that the given index is an integer within the bounds of the array.
+     * Throws a type error if the index is not an integer,
+     * or an error if the index is out of bounds.
+     */
     private fun validateArrayIndex(array: MutableList<*>, index: Any?, token: Token): Int {
         if (index !is Int) {
             throw errorHandler.typeError(token, "Array index must be an integer")
@@ -457,9 +736,10 @@ class Evaluator : AstVisitor<Any? > {
         }
         return index
     }
-
-    // ========== Function Calls ==========
-
+    /**
+     * Evaluates a function or method call expression.
+     * First checks for built-in functions, then handles method calls on objects,
+     */
     override fun visitCallExpr(expr: CallExpr): Any? {
         builtinFunctions.evaluate(expr, this)?.let { return it }
 
@@ -495,6 +775,11 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /**
+     * Evaluates a method call on an object.
+     * Retrieves the object and method name, evaluates the arguments,
+     * and invokes the method on the object.
+     */
     private fun evaluateMethodCall(expr: CallExpr): Any? {
         val propertyExpr = expr.callee as PropertyAccessExpr
         val obj = propertyExpr.primaryWithSuffixes.accept(this)
@@ -508,11 +793,19 @@ class Evaluator : AstVisitor<Any? > {
         return obj.callMethod(methodName, arguments, errorHandler, propertyExpr.identifier)
     }
 
+    /**
+     * Calls a user-defined function.
+     * Validates the argument count and executes the function body in a new environment.
+     */
     private fun callUserFunction(function: FunctionObject, arguments: List<Any?>): Any? {
         validateArgumentCount(function, arguments)
         return executeFunction(function, arguments)
     }
 
+    /**
+     * Validates that the number of arguments matches the function's parameter count.
+     * Throws an error if the counts do not match.
+     */
     private fun validateArgumentCount(function: FunctionObject, arguments: List<Any? >) {
         if (arguments. size != function.parameters.size) {
             throw errorHandler.error(
@@ -522,6 +815,13 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /**
+     * Executes a user-defined function.
+     * Creates a new environment for the function call,
+     * binds the parameters to the arguments,
+     * and executes the function body.
+     * Catches ReturnException to retrieve the return value.
+     */
     private fun executeFunction(function: FunctionObject, arguments: List<Any?>): Any? {
         val functionEnvironment = Environment(enclosing = function.closure)
         bindParameters(function. parameters, arguments, functionEnvironment)
@@ -543,12 +843,20 @@ class Evaluator : AstVisitor<Any? > {
         }
     }
 
+    /**
+     * Binds function parameters to the provided arguments in the given environment.
+     */
     private fun bindParameters(parameters: List<Token>, arguments: List<Any?>, env: Environment) {
         for ((param, arg) in parameters.zip(arguments)) {
             env.define(param, arg)
         }
     }
 
+    /**
+     * Visits a property access expression.
+     * Evaluates the primary expression to get the object,
+     * then retrieves the specified property from the object.
+     */
     override fun visitPropertyAccessExpr(expr: PropertyAccessExpr): Any? {
         val obj = expr.primaryWithSuffixes.accept(this)
 
@@ -562,8 +870,10 @@ class Evaluator : AstVisitor<Any? > {
         return obj.getProperty(expr.identifier.lexeme, errorHandler, expr.identifier)
     }
 
-    // ========== Helper Methods ==========
 
+    /**
+     * Determines the truthiness of a value.
+     */
     private fun isTruthy(value: Any? ): Boolean {
         if (value == null) return false
         if (value is Boolean) return value

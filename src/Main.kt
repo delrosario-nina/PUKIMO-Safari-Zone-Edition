@@ -24,6 +24,7 @@ class InputBuffer {
 
     fun hasContent(): Boolean = lines.isNotEmpty()
 
+
     /**
      * Returns all buffered lines as a single code string and clears the buffer.
      * This is used for the evaluation step in the REPL.
