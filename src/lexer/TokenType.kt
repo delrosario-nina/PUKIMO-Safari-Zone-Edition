@@ -7,7 +7,6 @@ enum class TokenType(val symbols: Set<String>?  = null) {
     IF_KEYWORD(setOf("if")),
     ELSE_KEYWORD(setOf("else")),
     EXPLORE_KEYWORD(setOf("explore")),
-    RUN_KEYWORD(setOf("run")),
     DEFINE_KEYWORD(setOf("define")),
     RETURN_KEYWORD(setOf("return")),
     PRINT_KEYWORD(setOf("print")),

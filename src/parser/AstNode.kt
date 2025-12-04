@@ -29,9 +29,7 @@ data class PrintStmt(val expression: Expr) : Stmt() {
 data class Block(val stmtList: List<Stmt>) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitBlock(this)
 }
-data class RunStmt(val token: Token) : Stmt() {
-    override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitRunStmt(this)
-}
+
 data class ExploreStmt(val safariZoneVar: Token, val block: Block) : Stmt() {
     override fun <R> accept(visitor: AstVisitor<R>): R = visitor.visitExploreStmt(this)
 }

@@ -96,9 +96,6 @@ class Evaluator : AstVisitor<Any? > {
     override fun visitExploreStmt(stmt: ExploreStmt): Any? =
         statementEvaluator.visitExploreStmt(stmt)
 
-    override fun visitRunStmt(stmt: RunStmt): Any? =
-        statementEvaluator.visitRunStmt(stmt)
-
     // Delegate to LoopEvaluator
     override fun visitWhileStmt(stmt: WhileStmt): Any? =
         loopEvaluator. visitWhileStmt(stmt)

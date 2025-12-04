@@ -15,7 +15,6 @@ interface AstVisitor<R> {
     fun visitDefineStmt(stmt: DefineStmt): R
     fun visitExploreStmt(stmt: ExploreStmt): R
     fun visitReturnStmt(stmt: ReturnStmt): R
-    fun visitRunStmt(stmt: RunStmt): R
 
     // Expressions
     fun visitLiteralExpr(expr: LiteralExpr): R

@@ -53,7 +53,6 @@ class Parser(
         return when {
             tokenBuffer.match(TokenType.VAR_KEYWORD) -> parseVarDeclStmt()
             tokenBuffer.match(TokenType.PRINT_KEYWORD) -> parsePrintStmt()
-            tokenBuffer. match(TokenType.RUN_KEYWORD) -> parseRunStmt()
             tokenBuffer. match(TokenType.WHILE_KEYWORD) -> parseWhileStmt()
             tokenBuffer. match(TokenType.FOR_KEYWORD) -> parseForStmt()
             tokenBuffer.match(TokenType.BREAK_KEYWORD) -> parseBreakStmt()
@@ -204,9 +203,7 @@ class Parser(
 
     private fun parseExprStmt(): Stmt {
         val expr = parseExpression()
-        if (tokenBuffer.check(TokenType. SEMICOLON)) {
-            consume(TokenType.SEMICOLON, "Expected ';' after expression")
-        }
+        consume(TokenType.SEMICOLON, "Expected ';' after expression. Semicolons are required in PukiMO.")
         return ExprStmt(expr)
     }
 
@@ -236,13 +233,6 @@ class Parser(
         }
 
         return stmts
-    }
-
-    private fun parseRunStmt(): Stmt {
-        val runToken = tokenBuffer.previous()
-        context.validateRunStatement(runToken)
-        consume(TokenType. SEMICOLON, "Expected ';' after 'run' statement")
-        return RunStmt(runToken)
     }
 
     private fun parseExploreStmt(): Stmt {
@@ -522,11 +512,10 @@ class Parser(
     }
 
     private fun isStatementKeyword(): Boolean {
-        return when (tokenBuffer.peek().type) {
-            TokenType.VAR_KEYWORD, TokenType. DEFINE_KEYWORD, TokenType.IF_KEYWORD,
+        return when (tokenBuffer.peek(). type) {
+            TokenType.VAR_KEYWORD, TokenType.DEFINE_KEYWORD, TokenType.IF_KEYWORD,
             TokenType.WHILE_KEYWORD, TokenType.FOR_KEYWORD, TokenType.PRINT_KEYWORD,
-            TokenType.RUN_KEYWORD, TokenType. EXPLORE_KEYWORD, TokenType.RETURN_KEYWORD,
-            TokenType. BREAK_KEYWORD, TokenType. CONTINUE_KEYWORD -> true
+            TokenType. BREAK_KEYWORD, TokenType.CONTINUE_KEYWORD, TokenType.EXPLORE_KEYWORD -> true
             else -> false
         }
     }

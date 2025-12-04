@@ -53,9 +53,6 @@ class AstPrinter : AstVisitor<String> {
     override fun visitContinueStmt(stmt: ContinueStmt): String =
         "(continue)"
 
-    override fun visitRunStmt(stmt: RunStmt): String =
-        "(${stmt.token.lexeme})"
-
     override fun visitExploreStmt(stmt: ExploreStmt): String =
         "(explore ${stmt.safariZoneVar.lexeme} ${stmt.block.accept(this)})"
 

@@ -73,38 +73,42 @@ class StatementEvaluator(private val evaluator: Evaluator) {
         return obj
     }
 
+    // In StatementEvaluator.kt
     private fun executeExploreBlock(stmt: ExploreStmt, safariZone: SafariZoneObject): Any? {
         val exploreEnvironment = Environment(enclosing = evaluator.getEnvironment())
-        exploreEnvironment.define(stmt. safariZoneVar, safariZone)
+        exploreEnvironment.define(stmt.safariZoneVar, safariZone)
         exploreEnvironment.define(Evaluator.ENCOUNTER_TOKEN, null)
 
         val previous = evaluator.getEnvironment()
-        var endedByRun = false
 
         try {
-            evaluator. setEnvironment(exploreEnvironment)
+            evaluator.setEnvironment(exploreEnvironment)
 
             while (safariZone.turns > 0) {
                 safariZone.turns--
 
                 val pokemonCollection = getPokemonCollection(safariZone)
-                if (pokemonCollection.isEmpty()) {
+                if (pokemonCollection. isEmpty()) {
                     println("No Pokemon left to encounter!")
                     break
                 }
 
-                val encounter = pokemonCollection.random(evaluator. getErrorHandler(), Evaluator.ENCOUNTER_TOKEN)
+                val encounter = pokemonCollection.random(
+                    evaluator.getErrorHandler(),
+                    Evaluator.ENCOUNTER_TOKEN
+                )
                 evaluator.getEnvironment().assign(Evaluator.ENCOUNTER_TOKEN, encounter)
 
                 try {
-                    stmt.block.accept(evaluator)
+                    stmt. block.accept(evaluator)
+                } catch (_: BreakException) {
+                    break
                 } catch (_: RunException) {
-                    endedByRun = true
                     break
                 }
             }
 
-            if (safariZone.turns == 0 && !endedByRun) {
+            if (safariZone.turns == 0) {
                 println("Explore: Out of turns!")
             }
             return null
@@ -112,7 +116,6 @@ class StatementEvaluator(private val evaluator: Evaluator) {
             evaluator.setEnvironment(previous)
         }
     }
-
     private fun getPokemonCollection(safariZone: SafariZoneObject): PokemonCollection {
         return safariZone.getProperty(
             "pokemon",
@@ -121,7 +124,5 @@ class StatementEvaluator(private val evaluator: Evaluator) {
         ) as PokemonCollection
     }
 
-    fun visitRunStmt(stmt: RunStmt): Any? {
-        throw RunException()
-    }
+
 }

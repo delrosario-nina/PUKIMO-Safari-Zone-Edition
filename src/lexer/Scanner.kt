@@ -12,7 +12,6 @@ class Scanner(private val errorHandler: LexerErrorHandler = LexerErrorHandler())
             "if" -> TokenType.IF_KEYWORD to null
             "else" -> TokenType.ELSE_KEYWORD to null
             "explore" -> TokenType.EXPLORE_KEYWORD to null
-            "run" -> TokenType.RUN_KEYWORD to null
             "define" -> TokenType.DEFINE_KEYWORD to null
             "return" -> TokenType.RETURN_KEYWORD to null
             "print" -> TokenType.PRINT_KEYWORD to null
