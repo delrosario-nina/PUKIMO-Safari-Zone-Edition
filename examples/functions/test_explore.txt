@@ -1,52 +1,391 @@
-:> PukiMO SafariZone Explore Feature Test Suite
+:> ========================================
+:> PukiMO Explore Feature Test Suite
+:> ========================================
 
-:> --- Setup SafariZone object and Pokemon ---
-var zone = SafariZone(balls=5, turns=5);
-zone.pokemon->add("Pikachu");
-zone.pokemon->add("Bulbasaur");
-zone.pokemon->add("Charmander");
-zone.pokemon->add("Mew");
+print("=== Explore Test Suite ===");
+print("");
 
-print("Initial SafariZone: " + zone);
+:> ========================================
+:> Test 1: Basic Explore
+:> ========================================
+print("--- Test 1: Basic Explore ---");
 
-:> --- Basic explore block, print all encounters ---
-explore(zone) {
-    print("Encountered: " + encounter);
+var zone1 = SafariZone(balls=10, turns=10);
+zone1.pokemon->add("Pikachu");
+zone1.pokemon->add("Bulbasaur");
+zone1.pokemon->add("Charmander");
+
+print("Pokemon in zone: " + zone1.pokemon->list());
+print("Starting explore...");
+
+explore(zone1) {
+    print("  Encountered: " + encounter);
 }
 
-print("After explore, balls left: " + zone.balls);
-print("Turns left: " + zone.turns);
+print("After explore:");
+print("  Balls: " + zone1.balls);
+print("  Turns: " + zone1.turns);
+print("");
 
-:> --- Explore with catching attempt and control flow (run) ---
-:> Reset zone for new test
-zone->reset();
-zone.pokemon->add("Squirtle");
-zone.pokemon->add("Jigglypuff");
+:> ========================================
+:> Test 2: Explore with Catch Attempts
+:> ========================================
+print("--- Test 2: Catch Attempts ---");
 
-explore(zone) {
-    print("Trying to catch: " + encounter);
-    var caught = zone.pokemon->attemptCatch(encounter, zone);   // Attempts catch and decrements balls
-    if (caught) {
-        print("Caught: " + encounter);
+var zone2 = SafariZone(balls=10, turns=10);
+zone2.pokemon->add("Rattata");
+zone2.pokemon->add("Pidgey");
+zone2.pokemon->add("Caterpie");
+
+zone2.pokemon->setCatchRate(80);
+
+var caught = 0;
+var escaped = 0;
+
+explore(zone2) {
+    print("  Wild " + encounter + " appeared!");
+
+    if (zone2.balls > 0) {
+        var result = zone2.pokemon->attemptCatch(encounter, zone2);
+
+        if (result) {
+            print("    SUCCESS: Caught " + encounter);
+            caught = caught + 1;
+        } else {
+            print("    FAILED: " + encounter + " escaped");
+            escaped = escaped + 1;
+        }
     } else {
-        print(encounter + " escaped.");
+        print("    Out of balls!  Cannot catch.");
     }
 }
 
-print("Pokemon left in zone: " + zone.pokemon->list());
+print("Summary:");
+print("  Caught: " + caught);
+print("  Escaped: " + escaped);
+print("  Balls used: " + (10 - zone2.balls));
+print("  Turns used: " + (10 - zone2. turns));
+print("");
 
-:> --- Explore: exit early with run if legendary found ---
-zone->reset();
-zone.pokemon->add("Articuno");
-zone.pokemon->add("Zapdos");
-zone.pokemon->add("Moltres");
+:> ========================================
+:> Test 3: Early Exit with Run
+:> ========================================
+print("--- Test 3: Early Exit (run) ---");
 
-explore(zone) {
-    print("Searching: " + encounter);
-    if (encounter == "Articuno" || encounter == "Zapdos" || encounter == "Moltres") {
-        print("Legendary found! Ending Safari early.");
+var zone3 = SafariZone(balls=10, turns=10);
+zone3.pokemon->add("Pidgey");
+zone3.pokemon->add("Rattata");
+zone3.pokemon->add("Mew");
+zone3.pokemon->add("Pikachu");
+zone3.pokemon->add("Eevee");
+
+print("Searching for Mew...");
+
+explore(zone3) {
+    print("  Found: " + encounter);
+
+    if (encounter == "Mew") {
+        print("    LEGENDARY FOUND! Ending safari early.");
         run;
     }
 }
 
-print("SafariZone status at end: " + zone);
+print("Balls remaining: " + zone3.balls);
+print("Turns remaining: " + zone3.turns);
+print("");
+
+:> ========================================
+:> Test 4: Team Building
+:> ========================================
+print("--- Test 4: Build a Team ---");
+
+var zone4 = SafariZone(balls=15, turns=15);
+var team = Team("Ash", maxSize=3);
+
+zone4. pokemon->add("Pikachu");
+zone4.pokemon->add("Bulbasaur");
+zone4.pokemon->add("Charmander");
+zone4.pokemon->add("Squirtle");
+zone4.pokemon->add("Jigglypuff");
+
+zone4.pokemon->setCatchRate(70);
+
+print("Goal: Catch 3 Pokemon");
+
+explore(zone4) {
+    print("  Encountered: " + encounter);
+
+    if (zone4.balls > 0) {
+        var caught = zone4.pokemon->attemptCatch(encounter, zone4);
+
+        if (caught) {
+            team.pokemon->add(encounter);
+            print("    Added to team! Total: " + team.pokemonCount);
+
+            var full = team->isFull();
+            if (full) {
+                print("    Team is full! Ending safari.");
+                run;
+            }
+        }
+    } else {
+        print("    Out of Safari Balls!");
+    }
+}
+
+print("Final team: " + team.pokemon->list());
+print("Team size: " + team.pokemonCount + "/" + team.maxSize);
+print("");
+
+:> ========================================
+:> Test 5: Resource Exhaustion
+:> ========================================
+print("--- Test 5: Resource Exhaustion ---");
+
+var zone5 = SafariZone(balls=3, turns=10);
+zone5.pokemon->add("Pidgey");
+zone5.pokemon->add("Rattata");
+zone5.pokemon->add("Spearow");
+zone5.pokemon->add("Caterpie");
+zone5.pokemon->add("Weedle");
+
+zone5. pokemon->setCatchRate(50);
+
+print("Starting with only 3 balls...");
+
+explore(zone5) {
+    print("  Encounter: " + encounter);
+
+    if (zone5.balls > 0) {
+        zone5.pokemon->attemptCatch(encounter, zone5);
+        print("    Balls left: " + zone5.balls);
+    } else {
+        print("    No balls remaining, skipping...");
+    }
+}
+
+print("Safari ended");
+print("Balls: " + zone5.balls);
+print("Turns: " + zone5.turns);
+print("");
+
+:> ========================================
+:> Test 6: Species-Specific Catch Rates
+:> ========================================
+print("--- Test 6: Species Catch Rates ---");
+
+var zone6 = SafariZone(balls=20, turns=20);
+zone6.pokemon->add("Pidgey");
+zone6.pokemon->add("Pikachu");
+zone6.pokemon->add("Mew");
+zone6.pokemon->add("Rattata");
+
+zone6.pokemon->setCatchRate(50);
+zone6.pokemon->setSpeciesCatchRate("Pidgey", 90);
+zone6.pokemon->setSpeciesCatchRate("Pikachu", 30);
+zone6.pokemon->setSpeciesCatchRate("Mew", 5);
+zone6.pokemon->setSpeciesCatchRate("Rattata", 95);
+
+print("Catch rates configured:");
+print("  Pidgey: 90%, Pikachu: 30%");
+print("  Mew: 5%, Rattata: 95%");
+
+explore(zone6) {
+    print("  Trying: " + encounter);
+
+    if (zone6.balls > 0) {
+        var caught = zone6.pokemon->attemptCatch(encounter, zone6);
+
+        if (caught) {
+            print("    CAUGHT!");
+        } else {
+            print("    Escaped");
+        }
+    }
+}
+print("");
+
+:> ========================================
+:> Test 7: Empty Zone
+:> ========================================
+print("--- Test 7: Empty Zone ---");
+
+var zone7 = SafariZone(balls=5, turns=5);
+
+print("Exploring empty zone...");
+
+var encountered = false;
+
+explore(zone7) {
+    print("  This should not print");
+    encountered = true;
+}
+
+if (encountered) {
+    print("FAIL: Empty zone had encounters");
+} else {
+    print("PASS: No encounters in empty zone");
+}
+print("");
+
+:> ========================================
+:> Test 8: Single Pokemon Zone
+:> ========================================
+print("--- Test 8: Single Pokemon ---");
+
+var zone8 = SafariZone(balls=5, turns=5);
+zone8. pokemon->add("Pikachu");
+
+var count = 0;
+
+explore(zone8) {
+    print("  Encounter: " + encounter);
+    count = count + 1;
+}
+
+print("Total encounters: " + count);
+print("");
+
+:> ========================================
+:> Test 9: Conditional Catching
+:> ========================================
+print("--- Test 9: Conditional Catching ---");
+
+var zone9 = SafariZone(balls=15, turns=15);
+zone9.pokemon->add("Pidgey");
+zone9.pokemon->add("Pikachu");
+zone9.pokemon->add("Eevee");
+zone9.pokemon->add("Dratini");
+zone9.pokemon->add("Rattata");
+
+zone9.pokemon->setCatchRate(70);
+
+var rareList = ["Pikachu", "Eevee", "Dratini"];
+
+print("Only catching rare Pokemon...");
+
+explore(zone9) {
+    print("  Found: " + encounter);
+
+    var isRare = contains(rareList, encounter);
+
+    if (isRare) {
+        print("    RARE!  Attempting catch...");
+
+        if (zone9.balls > 0) {
+            var caught = zone9.pokemon->attemptCatch(encounter, zone9);
+
+            if (caught) {
+                print("    SUCCESS!");
+            } else {
+                print("    Escaped!");
+            }
+        } else {
+            print("    No balls left!");
+        }
+    } else {
+        print("    Common, skipping");
+    }
+}
+print("");
+
+:> ========================================
+:> Test 10: Nested Functions in Explore
+:> ========================================
+print("--- Test 10: Nested Functions ---");
+
+var zone10 = SafariZone(balls=10, turns=10);
+zone10.pokemon->add("Bulbasaur");
+zone10. pokemon->add("Charmander");
+zone10.pokemon->add("Squirtle");
+
+zone10.pokemon->setCatchRate(60);
+
+define getRarity(name) {
+    if (name == "Mew" || name == "Mewtwo") {
+        return "Legendary";
+    }
+    if (name == "Pikachu" || name == "Eevee") {
+        return "Rare";
+    }
+    return "Common";
+}
+
+explore(zone10) {
+    var rarity = getRarity(encounter);
+    print("  [" + rarity + "] " + encounter);
+
+    if (zone10.balls > 0) {
+        zone10.pokemon->attemptCatch(encounter, zone10);
+    }
+}
+print("");
+
+:> ========================================
+:> Test 11: Encounter Counter
+:> ========================================
+print("--- Test 11: Encounter Counter ---");
+
+var zone11 = SafariZone(balls=10, turns=10);
+zone11.pokemon->add("Pidgey");
+zone11.pokemon->add("Rattata");
+zone11. pokemon->add("Spearow");
+
+var encounterCount = 0;
+
+explore(zone11) {
+    encounterCount = encounterCount + 1;
+    print("  Encounter #" + encounterCount + ": " + encounter);
+}
+
+print("Total encounters: " + encounterCount);
+print("");
+
+:> ========================================
+:> Test 12: Check Balls Before Catching
+:> ========================================
+print("--- Test 12: Safe Catching ---");
+
+var zone12 = SafariZone(balls=2, turns=10);
+zone12.pokemon->add("Pikachu");
+zone12.pokemon->add("Eevee");
+zone12.pokemon->add("Bulbasaur");
+zone12.pokemon->add("Charmander");
+
+zone12. pokemon->setCatchRate(60);
+
+explore(zone12) {
+    print("  Found: " + encounter);
+    print("    Balls: " + zone12. balls);
+
+    if (zone12.balls > 0) {
+        var caught = zone12.pokemon->attemptCatch(encounter, zone12);
+        if (caught) {
+            print("    Caught!");
+        } else {
+            print("    Escaped!");
+        }
+    } else {
+        print("    Cannot catch - no balls!");
+        run;
+    }
+}
+
+print("Safari ended with " + zone12.balls + " balls");
+print("");
+
+:> ========================================
+:> Final Summary
+:> ========================================
+print("=================================");
+print("  Explore Test Suite Complete");
+print("=================================");
+print("");
+print("Tested:");
+print("- Basic exploration");
+print("- Catch attempts");
+print("- Early exit (run)");
+print("- Team building");
+print("- Resource management");
+print("- Catch rates");
+print("- Edge cases");

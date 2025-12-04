@@ -43,13 +43,4 @@ class TokenBuffer(private val tokens: List<Token>) {
         }
         return false
     }
-
-    /*
-     * Consumes a token of the expected type or throws an error.
-     * Used for enforcing syntax rules in parsing.
-     */
-    fun consume(type: TokenType, errorMessage: String, errorHandler: ErrorHandler): Token {
-        if (check(type)) return advance()
-        throw errorHandler.error(peek(), errorMessage)
-    }
 }

@@ -1,74 +1,860 @@
-:> PukiMO Non-Trivial Demo Program
-:> Demonstrates: user-defined functions, recursion, closures, objects, collections, control flow, loops, native I/O, and SafariZone gameplay.
+:> ========================================
+:> PukiMO Language - Master Test Suite
+:> Complete Language Feature Verification
+:> ========================================
 
-:> ---- Team Builder & Safari Adventure Program ----
+print("╔════════════════════════════════════════╗");
+print("║  PukiMO Language - Master Test Suite  ║");
+print("╚════════════════════════════════════════╝");
+print("");
 
-:> Ask user for trainer name and number of pokeballs/turns
-print("Welcome to Safari Zone!");
-print("Enter your trainer name:");
-var trainer = readString();
-print("How many Safari Balls?");
-var balls = readInt();
-if (balls == null || balls < 1) {
-    print("Defaulting to 5 Safari Balls.");
-    balls = 5;
-}
-print("How many turns?");
-var turns = readInt();
-if (turns == null || turns < 1) {
-    print("Defaulting to 5 turns.");
-    turns = 5;
-}
+var totalTests = 0;
+var passedTests = 0;
+var failedTests = 0;
 
-:> Create SafariZone and Team
-var zone = SafariZone(balls=balls, turns=turns);
-var team = Team(trainer);
+:> ========================================
+:> SECTION 1: VARIABLES AND TYPES
+:> ========================================
+print("=== SECTION 1: Variables and Types ===");
+print("");
 
-:> Add a set of starter Pokemon to SafariZone
-zone.pokemon->add("Bulbasaur");
-zone.pokemon->add("Charmander");
-zone.pokemon->add("Squirtle");
-zone.pokemon->add("Pikachu");
-zone.pokemon->add("Eevee");
-zone.pokemon->add("Jigglypuff");
-zone.pokemon->add("Mew");
-
-:> Function to check if a Pokémon is legendary (closure + custom logic)
-define isLegendary(name: string) {
-    return name == "Mew";
+:> Test 1. 1: Integer variables
+totalTests = totalTests + 1;
+var num = 42;
+if (num == 42) {
+    print("1.1 PASS: Integer variables");
+    passedTests = passedTests + 1;
+} else {
+    print("1.1 FAIL: Integer variables");
+    failedTests = failedTests + 1;
 }
 
-:> Function to attempt catch and add to team if successful
-define encounterLogic() {
-    print("Wild " + encounter + " appeared!");
-    if (isLegendary(encounter)) {
-        print("It's legendary! Try your luck...");
+:> Test 1.2: String variables
+totalTests = totalTests + 1;
+var name = "Pikachu";
+if (name == "Pikachu") {
+    print("1.2 PASS: String variables");
+    passedTests = passedTests + 1;
+} else {
+    print("1.2 FAIL: String variables");
+    failedTests = failedTests + 1;
+}
+
+:> Test 1.3: Boolean variables
+totalTests = totalTests + 1;
+var isActive = true;
+if (isActive == true) {
+    print("1.3 PASS: Boolean variables");
+    passedTests = passedTests + 1;
+} else {
+    print("1. 3 FAIL: Boolean variables");
+    failedTests = failedTests + 1;
+}
+
+:> Test 1.4: Variable reassignment
+totalTests = totalTests + 1;
+var counter = 10;
+counter = 20;
+if (counter == 20) {
+    print("1.4 PASS: Variable reassignment");
+    passedTests = passedTests + 1;
+} else {
+    print("1.4 FAIL: Variable reassignment");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 2: ARITHMETIC OPERATIONS
+:> ========================================
+print("=== SECTION 2: Arithmetic ===");
+print("");
+
+:> Test 2.1: Addition
+totalTests = totalTests + 1;
+var sum = 5 + 3;
+if (sum == 8) {
+    print("2.1 PASS: Addition");
+    passedTests = passedTests + 1;
+} else {
+    print("2.1 FAIL: Addition");
+    failedTests = failedTests + 1;
+}
+
+:> Test 2.2: Subtraction
+totalTests = totalTests + 1;
+var diff = 10 - 4;
+if (diff == 6) {
+    print("2. 2 PASS: Subtraction");
+    passedTests = passedTests + 1;
+} else {
+    print("2. 2 FAIL: Subtraction");
+    failedTests = failedTests + 1;
+}
+
+:> Test 2.3: Multiplication
+totalTests = totalTests + 1;
+var product = 6 * 7;
+if (product == 42) {
+    print("2.3 PASS: Multiplication");
+    passedTests = passedTests + 1;
+} else {
+    print("2.3 FAIL: Multiplication");
+    failedTests = failedTests + 1;
+}
+
+:> Test 2.4: Division
+totalTests = totalTests + 1;
+var quotient = 20 / 4;
+if (quotient == 5) {
+    print("2.4 PASS: Division");
+    passedTests = passedTests + 1;
+} else {
+    print("2.4 FAIL: Division");
+    failedTests = failedTests + 1;
+}
+
+:> Test 2. 5: Modulo
+totalTests = totalTests + 1;
+var remainder = 17 % 5;
+if (remainder == 2) {
+    print("2.5 PASS: Modulo");
+    passedTests = passedTests + 1;
+} else {
+    print("2.5 FAIL: Modulo");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 3: COMPARISON OPERATORS
+:> ========================================
+print("=== SECTION 3: Comparisons ===");
+print("");
+
+:> Test 3.1: Equality
+totalTests = totalTests + 1;
+if (5 == 5) {
+    print("3.1 PASS: Equality (==)");
+    passedTests = passedTests + 1;
+} else {
+    print("3.1 FAIL: Equality (==)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 3.2: Inequality
+totalTests = totalTests + 1;
+if (5 != 3) {
+    print("3. 2 PASS: Inequality (!=)");
+    passedTests = passedTests + 1;
+} else {
+    print("3.2 FAIL: Inequality (!=)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 3.3: Less than
+totalTests = totalTests + 1;
+if (3 < 5) {
+    print("3.3 PASS: Less than (<)");
+    passedTests = passedTests + 1;
+} else {
+    print("3.3 FAIL: Less than (<)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 3.4: Greater than
+totalTests = totalTests + 1;
+if (10 > 7) {
+    print("3. 4 PASS: Greater than (>)");
+    passedTests = passedTests + 1;
+} else {
+    print("3.4 FAIL: Greater than (>)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 3.5: Less than or equal
+totalTests = totalTests + 1;
+if (5 <= 5) {
+    print("3.5 PASS: Less than or equal (<=)");
+    passedTests = passedTests + 1;
+} else {
+    print("3. 5 FAIL: Less than or equal (<=)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 3.6: Greater than or equal
+totalTests = totalTests + 1;
+if (8 >= 8) {
+    print("3. 6 PASS: Greater than or equal (>=)");
+    passedTests = passedTests + 1;
+} else {
+    print("3.6 FAIL: Greater than or equal (>=)");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 4: LOGICAL OPERATORS
+:> ========================================
+print("=== SECTION 4: Logical Operators ===");
+print("");
+
+:> Test 4.1: AND operator
+totalTests = totalTests + 1;
+if (true && true) {
+    print("4.1 PASS: AND operator (&&)");
+    passedTests = passedTests + 1;
+} else {
+    print("4.1 FAIL: AND operator (&&)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 4.2: OR operator
+totalTests = totalTests + 1;
+if (false || true) {
+    print("4. 2 PASS: OR operator (||)");
+    passedTests = passedTests + 1;
+} else {
+    print("4.2 FAIL: OR operator (||)");
+    failedTests = failedTests + 1;
+}
+
+:> Test 4.3: NOT operator
+totalTests = totalTests + 1;
+if (! false) {
+    print("4. 3 PASS: NOT operator (!)");
+    passedTests = passedTests + 1;
+} else {
+    print("4.3 FAIL: NOT operator (!)");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 5: CONTROL FLOW - IF/ELSE
+:> ========================================
+print("=== SECTION 5: If/Else ===");
+print("");
+
+:> Test 5. 1: Simple if
+totalTests = totalTests + 1;
+var ifTest = false;
+if (10 > 5) {
+    ifTest = true;
+}
+if (ifTest) {
+    print("5.1 PASS: Simple if");
+    passedTests = passedTests + 1;
+} else {
+    print("5.1 FAIL: Simple if");
+    failedTests = failedTests + 1;
+}
+
+:> Test 5.2: If/else
+totalTests = totalTests + 1;
+var elseTest = false;
+if (3 > 5) {
+    elseTest = false;
+} else {
+    elseTest = true;
+}
+if (elseTest) {
+    print("5.2 PASS: If/else");
+    passedTests = passedTests + 1;
+} else {
+    print("5.2 FAIL: If/else");
+    failedTests = failedTests + 1;
+}
+
+:> Test 5.3: Nested if/else
+totalTests = totalTests + 1;
+var nestedTest = 0;
+if (5 > 3) {
+    if (10 > 8) {
+        nestedTest = 1;
     }
-    var caught = zone.pokemon->attemptCatch(encounter, zone);
-    if (caught) {
-        print("You caught " + encounter + "!");
-        team.pokemon->add(encounter);
-        if (team.pokemon->count() == team.maxSize) {
-            print("Your team is full!");
-            run;
-        }
-    } else {
-        print(encounter + " escaped!");
+}
+if (nestedTest == 1) {
+    print("5.3 PASS: Nested if/else");
+    passedTests = passedTests + 1;
+} else {
+    print("5.3 FAIL: Nested if/else");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 6: LOOPS
+:> ========================================
+print("=== SECTION 6: Loops ===");
+print("");
+
+:> Test 6.1: For loop
+totalTests = totalTests + 1;
+var forSum = 0;
+for (i in 1 to 5) {
+    forSum = forSum + i;
+}
+if (forSum == 15) {
+    print("6.1 PASS: For loop");
+    passedTests = passedTests + 1;
+} else {
+    print("6.1 FAIL: For loop");
+    failedTests = failedTests + 1;
+}
+
+:> Test 6.2: While loop
+totalTests = totalTests + 1;
+var whileSum = 0;
+var whileCounter = 1;
+while (whileCounter <= 5) {
+    whileSum = whileSum + whileCounter;
+    whileCounter = whileCounter + 1;
+}
+if (whileSum == 15) {
+    print("6.2 PASS: While loop");
+    passedTests = passedTests + 1;
+} else {
+    print("6.2 FAIL: While loop");
+    failedTests = failedTests + 1;
+}
+
+:> Test 6.3: Break statement
+totalTests = totalTests + 1;
+var breakTest = 0;
+for (i in 1 to 10) {
+    if (i == 5) {
+        break;
+    }
+    breakTest = breakTest + 1;
+}
+if (breakTest == 4) {
+    print("6. 3 PASS: Break statement");
+    passedTests = passedTests + 1;
+} else {
+    print("6.3 FAIL: Break statement");
+    failedTests = failedTests + 1;
+}
+
+:> Test 6.4: Continue statement
+totalTests = totalTests + 1;
+var continueTest = 0;
+for (i in 1 to 5) {
+    if (i == 3) {
+        continue;
+    }
+    continueTest = continueTest + 1;
+}
+if (continueTest == 4) {
+    print("6. 4 PASS: Continue statement");
+    passedTests = passedTests + 1;
+} else {
+    print("6.4 FAIL: Continue statement");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 7: ARRAYS
+:> ========================================
+print("=== SECTION 7: Arrays ===");
+print("");
+
+:> Test 7.1: Array creation
+totalTests = totalTests + 1;
+var arr = ["a", "b", "c"];
+if (length(arr) == 3) {
+    print("7.1 PASS: Array creation");
+    passedTests = passedTests + 1;
+} else {
+    print("7.1 FAIL: Array creation");
+    failedTests = failedTests + 1;
+}
+
+:> Test 7.2: Array indexing
+totalTests = totalTests + 1;
+if (arr[0] == "a" && arr[1] == "b") {
+    print("7.2 PASS: Array indexing");
+    passedTests = passedTests + 1;
+} else {
+    print("7.2 FAIL: Array indexing");
+    failedTests = failedTests + 1;
+}
+
+:> Test 7.3: Array assignment
+totalTests = totalTests + 1;
+arr[1] = "X";
+if (arr[1] == "X") {
+    print("7.3 PASS: Array assignment");
+    passedTests = passedTests + 1;
+} else {
+    print("7.3 FAIL: Array assignment");
+    failedTests = failedTests + 1;
+}
+
+:> Test 7.4: Array contains
+totalTests = totalTests + 1;
+if (contains(arr, "a")) {
+    print("7. 4 PASS: Array contains");
+    passedTests = passedTests + 1;
+} else {
+    print("7.4 FAIL: Array contains");
+    failedTests = failedTests + 1;
+}
+
+:> Test 7.5: Array concat
+totalTests = totalTests + 1;
+var arr1 = [1, 2];
+var arr2 = [3, 4];
+var combined = concat(arr1, arr2);
+if (length(combined) == 4) {
+    print("7. 5 PASS: Array concat");
+    passedTests = passedTests + 1;
+} else {
+    print("7.5 FAIL: Array concat");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 8: FUNCTIONS
+:> ========================================
+print("=== SECTION 8: Functions ===");
+print("");
+
+:> Test 8.1: Function definition and call
+totalTests = totalTests + 1;
+define testFunc() {
+    return 42;
+}
+if (testFunc() == 42) {
+    print("8.1 PASS: Function definition");
+    passedTests = passedTests + 1;
+} else {
+    print("8.1 FAIL: Function definition");
+    failedTests = failedTests + 1;
+}
+
+:> Test 8.2: Function with parameters
+totalTests = totalTests + 1;
+define addFunc(a, b) {
+    return a + b;
+}
+if (addFunc(5, 7) == 12) {
+    print("8.2 PASS: Function parameters");
+    passedTests = passedTests + 1;
+} else {
+    print("8. 2 FAIL: Function parameters");
+    failedTests = failedTests + 1;
+}
+
+:> Test 8.3: Function with local variables
+totalTests = totalTests + 1;
+define localFunc(x) {
+    var local = x * 2;
+    return local;
+}
+if (localFunc(5) == 10) {
+    print("8.3 PASS: Local variables");
+    passedTests = passedTests + 1;
+} else {
+    print("8.3 FAIL: Local variables");
+    failedTests = failedTests + 1;
+}
+
+:> Test 8.4: Recursion
+totalTests = totalTests + 1;
+define factorialFunc(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorialFunc(n - 1);
+}
+if (factorialFunc(5) == 120) {
+    print("8.4 PASS: Recursion");
+    passedTests = passedTests + 1;
+} else {
+    print("8.4 FAIL: Recursion");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 9: CLOSURES
+:> ========================================
+print("=== SECTION 9: Closures ===");
+print("");
+
+:> Test 9.1: Simple closure
+totalTests = totalTests + 1;
+define makeCounterFunc() {
+    var count = 0;
+    define increment() {
+        count = count + 1;
+        return count;
+    }
+    return increment;
+}
+var counterFunc = makeCounterFunc();
+counterFunc();
+counterFunc();
+if (counterFunc() == 3) {
+    print("9. 1 PASS: Simple closure");
+    passedTests = passedTests + 1;
+} else {
+    print("9.1 FAIL: Simple closure");
+    failedTests = failedTests + 1;
+}
+
+:> Test 9.2: Closure with parameter
+totalTests = totalTests + 1;
+define makeAdderFunc(n) {
+    define adder(x) {
+        return x + n;
+    }
+    return adder;
+}
+var add10 = makeAdderFunc(10);
+if (add10(5) == 15) {
+    print("9.2 PASS: Closure with parameter");
+    passedTests = passedTests + 1;
+} else {
+    print("9.2 FAIL: Closure with parameter");
+    failedTests = failedTests + 1;
+}
+
+:> Test 9.3: Multiple closures
+totalTests = totalTests + 1;
+define makeMultFunc(factor) {
+    define mult(x) {
+        return x * factor;
+    }
+    return mult;
+}
+var times2 = makeMultFunc(2);
+var times3 = makeMultFunc(3);
+if (times2(5) == 10 && times3(5) == 15) {
+    print("9.3 PASS: Multiple closures");
+    passedTests = passedTests + 1;
+} else {
+    print("9.3 FAIL: Multiple closures");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 10: SAFARIZONE OBJECTS
+:> ========================================
+print("=== SECTION 10: SafariZone Objects ===");
+print("");
+
+:> Test 10.1: SafariZone creation
+totalTests = totalTests + 1;
+var testZone = SafariZone(balls=10, turns=10);
+if (testZone. balls == 10 && testZone.turns == 10) {
+    print("10.1 PASS: SafariZone creation");
+    passedTests = passedTests + 1;
+} else {
+    print("10. 1 FAIL: SafariZone creation");
+    failedTests = failedTests + 1;
+}
+
+:> Test 10.2: SafariZone properties
+totalTests = totalTests + 1;
+if (testZone.initialBalls == 10 && testZone.initialTurns == 10) {
+    print("10.2 PASS: SafariZone properties");
+    passedTests = passedTests + 1;
+} else {
+    print("10.2 FAIL: SafariZone properties");
+    failedTests = failedTests + 1;
+}
+
+:> Test 10.3: SafariZone property modification
+totalTests = totalTests + 1;
+testZone.balls = 5;
+if (testZone.balls == 5) {
+    print("10.3 PASS: Property modification");
+    passedTests = passedTests + 1;
+} else {
+    print("10.3 FAIL: Property modification");
+    failedTests = failedTests + 1;
+}
+
+:> Test 10.4: SafariZone methods
+totalTests = totalTests + 1;
+testZone->useBall();
+if (testZone. balls == 4) {
+    print("10. 4 PASS: SafariZone methods");
+    passedTests = passedTests + 1;
+} else {
+    print("10.4 FAIL: SafariZone methods");
+    failedTests = failedTests + 1;
+}
+
+:> Test 10.5: SafariZone reset
+totalTests = totalTests + 1;
+testZone->reset();
+if (testZone.balls == 10 && testZone.turns == 10) {
+    print("10.5 PASS: SafariZone reset");
+    passedTests = passedTests + 1;
+} else {
+    print("10.5 FAIL: SafariZone reset");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 11: POKEMON COLLECTION
+:> ========================================
+print("=== SECTION 11: Pokemon Collection ===");
+print("");
+
+:> Test 11.1: Adding Pokemon
+totalTests = totalTests + 1;
+var pokemonZone = SafariZone(balls=10, turns=10);
+pokemonZone.pokemon->add("Pikachu");
+pokemonZone.pokemon->add("Bulbasaur");
+if (pokemonZone.pokemon->count() == 2) {
+    print("11.1 PASS: Adding Pokemon");
+    passedTests = passedTests + 1;
+} else {
+    print("11.1 FAIL: Adding Pokemon");
+    failedTests = failedTests + 1;
+}
+
+:> Test 11. 2: Finding Pokemon
+totalTests = totalTests + 1;
+if (pokemonZone.pokemon->find("Pikachu") == "Pikachu") {
+    print("11.2 PASS: Finding Pokemon");
+    passedTests = passedTests + 1;
+} else {
+    print("11.2 FAIL: Finding Pokemon");
+    failedTests = failedTests + 1;
+}
+
+:> Test 11.3: AddAll method
+totalTests = totalTests + 1;
+var morePokemon = ["Charmander", "Squirtle"];
+pokemonZone.pokemon->addAll(morePokemon);
+if (pokemonZone.pokemon->count() == 4) {
+    print("11. 3 PASS: AddAll method");
+    passedTests = passedTests + 1;
+} else {
+    print("11. 3 FAIL: AddAll method");
+    failedTests = failedTests + 1;
+}
+
+:> Test 11.4: Catch rate setting
+totalTests = totalTests + 1;
+pokemonZone. pokemon->setCatchRate(75);
+pokemonZone.pokemon->setSpeciesCatchRate("Pikachu", 50);
+print("11.4 PASS: Catch rate setting (no error)");
+passedTests = passedTests + 1;
+totalTests = totalTests + 1;
+
+print("");
+
+:> ========================================
+:> SECTION 12: TEAM OBJECTS
+:> ========================================
+print("=== SECTION 12: Team Objects ===");
+print("");
+
+:> Test 12.1: Team creation
+totalTests = totalTests + 1;
+var testTeam = Team("Ash", maxSize=6);
+if (testTeam. trainerName == "Ash" && testTeam.maxSize == 6) {
+    print("12.1 PASS: Team creation");
+    passedTests = passedTests + 1;
+} else {
+    print("12.1 FAIL: Team creation");
+    failedTests = failedTests + 1;
+}
+
+:> Test 12.2: Adding to team
+totalTests = totalTests + 1;
+testTeam. pokemon->add("Pikachu");
+if (testTeam.pokemonCount == 1) {
+    print("12.2 PASS: Adding to team");
+    passedTests = passedTests + 1;
+} else {
+    print("12.2 FAIL: Adding to team");
+    failedTests = failedTests + 1;
+}
+
+:> Test 12.3: Team methods
+totalTests = totalTests + 1;
+var teamEmpty = testTeam->isEmpty();
+var teamHas = testTeam->has("Pikachu");
+if (teamEmpty == false && teamHas == true) {
+    print("12.3 PASS: Team methods");
+    passedTests = passedTests + 1;
+} else {
+    print("12.3 FAIL: Team methods");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 13: EXPLORE STATEMENT
+:> ========================================
+print("=== SECTION 13: Explore Statement ===");
+print("");
+
+:> Test 13. 1: Basic explore
+totalTests = totalTests + 1;
+var exploreZone = SafariZone(balls=10, turns=10);
+exploreZone.pokemon->add("Rattata");
+exploreZone. pokemon->add("Pidgey");
+var encounterCount = 0;
+explore(exploreZone) {
+    encounterCount = encounterCount + 1;
+}
+if (encounterCount > 0) {
+    print("13.1 PASS: Basic explore");
+    passedTests = passedTests + 1;
+} else {
+    print("13.1 FAIL: Basic explore");
+    failedTests = failedTests + 1;
+}
+
+:> Test 13.2: Explore with early exit
+totalTests = totalTests + 1;
+var exitZone = SafariZone(balls=10, turns=10);
+exitZone.pokemon->add("Pidgey");
+exitZone. pokemon->add("Mew");
+exitZone.pokemon->add("Rattata");
+var foundMew = false;
+explore(exitZone) {
+    if (encounter == "Mew") {
+        foundMew = true;
+        run;
     }
 }
-
-:> Explore loop -- adventure run!
-explore(zone) {
-    encounterLogic();
+if (foundMew) {
+    print("13.2 PASS: Explore with run");
+    passedTests = passedTests + 1;
+} else {
+    print("13. 2 FAIL: Explore with run");
+    failedTests = failedTests + 1;
 }
 
-:> Print summary
-print("Safari adventure ended!");
-print("Trainer: " + team.trainerName);
-print("Your team: " + team.pokemon->list());
-print("Safari balls left: " + zone.balls);
-print("Turns left: " + zone.turns);
+print("");
 
+:> ========================================
+:> SECTION 14: STRING OPERATIONS
+:> ========================================
+print("=== SECTION 14: String Operations ===");
+print("");
 
+:> Test 14.1: String concatenation
+totalTests = totalTests + 1;
+var str1 = "Hello";
+var str2 = "World";
+combined = str1 + " " + str2;
+if (combined == "Hello World") {
+    print("14.1 PASS: String concatenation");
+    passedTests = passedTests + 1;
+} else {
+    print("14.1 FAIL: String concatenation");
+    failedTests = failedTests + 1;
+}
 
-print("Object property: " + team.trainerName + " (" + length(team.trainerName) + ")");
+:> Test 14.2: String comparison
+totalTests = totalTests + 1;
+if ("test" == "test" && "test" != "other") {
+    print("14.2 PASS: String comparison");
+    passedTests = passedTests + 1;
+} else {
+    print("14.2 FAIL: String comparison");
+    failedTests = failedTests + 1;
+}
+
+:> Test 14.3: String with numbers
+totalTests = totalTests + 1;
+var message = "Score: " + 100;
+if (message == "Score: 100") {
+    print("14.3 PASS: String with numbers");
+    passedTests = passedTests + 1;
+} else {
+    print("14.3 FAIL: String with numbers");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> SECTION 15: COMPLEX EXPRESSIONS
+:> ========================================
+print("=== SECTION 15: Complex Expressions ===");
+print("");
+
+:> Test 15.1: Nested expressions
+totalTests = totalTests + 1;
+var result = (5 + 3) * (10 - 2);
+if (result == 64) {
+    print("15. 1 PASS: Nested expressions");
+    passedTests = passedTests + 1;
+} else {
+    print("15. 1 FAIL: Nested expressions");
+    failedTests = failedTests + 1;
+}
+
+:> Test 15.2: Complex boolean expressions
+totalTests = totalTests + 1;
+if ((5 > 3 && 10 < 20) || (false && true)) {
+    print("15.2 PASS: Complex boolean");
+    passedTests = passedTests + 1;
+} else {
+    print("15.2 FAIL: Complex boolean");
+    failedTests = failedTests + 1;
+}
+
+:> Test 15.3: Mixed operations
+totalTests = totalTests + 1;
+var mixedResult = 10 + 5 * 2 - 3;
+if (mixedResult == 17) {
+    print("15. 3 PASS: Mixed operations");
+    passedTests = passedTests + 1;
+} else {
+    print("15.3 FAIL: Mixed operations");
+    failedTests = failedTests + 1;
+}
+
+print("");
+
+:> ========================================
+:> FINAL RESULTS
+:> ========================================
+print("╔════════════════════════════════════════╗");
+print("║           TEST RESULTS                 ║");
+print("╚════════════════════════════════════════╝");
+print("");
+print("Total Tests:  " + totalTests);
+print("Passed:       " + passedTests);
+print("Failed:       " + failedTests);
+print("");
+
+var percentage = (passedTests * 100) / totalTests;
+print("Success Rate: " + percentage + "%");
+print("");
+
+if (failedTests == 0) {
+    print("╔════════════════════════════════════════╗");
+    print("║     ALL TESTS PASSED!                  ║");
+    print("║     PukiMO Language Verified!          ║");
+    print("╚════════════════════════════════════════╝");
+} else {
+    print("Some tests failed. Review output above.");
+}

@@ -53,12 +53,13 @@ class ReplExecutor {
             val ast = parser.parse()
 
             for (stmt in ast.stmtList) {
-                evaluator.evaluate(stmt, isReplMode = true)
+                evaluator.evaluate(stmt,
+                    isReplMode = false)
             }
 
         } catch (e: RuntimeError) {
             println(e.message)
-            evaluator.errorHandler.clearErrors()
+            evaluator.getErrorHandler().clearErrors()
         } catch (e: ParserError) {
             println(e.message)
         } catch (e: Exception) {
@@ -132,7 +133,7 @@ fun runRepl() {
 }
 
 //kotlinc @sources.txt -include-runtime -d PukiMo.jar
-//java -jar PukiMo.jar team.txt
+//java -jar PukiMo.jar examples/test_pukimo.txt
 fun main(args: Array<String>) {
     if (args.isNotEmpty()) {
         runFile(args[0])
