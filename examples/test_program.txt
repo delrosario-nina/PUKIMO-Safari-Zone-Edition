@@ -1,0 +1,363 @@
+:> ========================================
+:> PukiMO Interactive Pokemon Adventure
+:> An interactive text-based game
+:> ========================================
+
+print("╔════════════════════════════════════════╗");
+print("║   Pokemon Safari Zone Adventure        ║");
+print("╚════════════════════════════════════════╝");
+print("");
+
+:> ========================================
+:> Game Setup
+:> ========================================
+
+print("Welcome, Trainer!");
+print("");
+print("What is your name?");
+var playerName = readString();
+
+print("");
+print("Nice to meet you, " + playerName + "!");
+print("");
+
+:> Choose difficulty
+print("Choose your difficulty:");
+print("  1. Easy   (50 balls, 1000 turns, high catch rates)");
+print("  2. Normal (30 balls, 500 turns, normal catch rates)");
+print("  3. Hard   (15 balls, 200 turns, low catch rates)");
+print("");
+print("Enter 1, 2, or 3:");
+var difficulty = readInt();
+
+var ballCount = 30;
+var turnCount = 500;
+var catchRateMultiplier = 1;
+
+if (difficulty == 1) {
+    ballCount = 50;
+    turnCount = 1000;
+    catchRateMultiplier = 2;
+    print("");
+    print("Easy mode selected!  Good luck!");
+} else {
+    if (difficulty == 3) {
+        ballCount = 15;
+        turnCount = 200;
+        catchRateMultiplier = 0;
+        print("");
+        print("Hard mode selected! This will be challenging!");
+    } else {
+        print("");
+        print("Normal mode selected!  Let's go!");
+    }
+}
+
+print("");
+
+:> Create game objects
+var zone = SafariZone(balls=ballCount, turns=turnCount);
+var team = Team(playerName, maxSize=6);
+
+:> Setup Pokemon in zone
+zone.pokemon->addAll([
+    "Pidgey", "Rattata", "Spearow", "Caterpie",
+    "Weedle", "Rattata", "Pidgey", "Zubat"
+]);
+
+zone.pokemon->addAll([
+    "Pikachu", "Eevee", "Jigglypuff", "Meowth"
+]);
+
+zone.pokemon->addAll([
+    "Dratini", "Lapras", "Snorlax", "Chansey"
+]);
+
+zone.pokemon->addAll([
+    "Articuno", "Zapdos", "Moltres", "Mewtwo"
+]);
+
+:> Set catch rates based on difficulty
+if (catchRateMultiplier == 2) {
+    zone.pokemon->setCatchRate(70);
+    zone.pokemon->setSpeciesCatchRate("Pikachu", 60);
+    zone.pokemon->setSpeciesCatchRate("Articuno", 10);
+    zone.pokemon->setSpeciesCatchRate("Mewtwo", 5);
+} else {
+    if (catchRateMultiplier == 0) {
+        zone. pokemon->setCatchRate(30);
+        zone.pokemon->setSpeciesCatchRate("Pikachu", 15);
+        zone.pokemon->setSpeciesCatchRate("Articuno", 1);
+        zone.pokemon->setSpeciesCatchRate("Mewtwo", 1);
+    } else {
+        zone.pokemon->setCatchRate(50);
+        zone.pokemon->setSpeciesCatchRate("Pidgey", 90);
+        zone.pokemon->setSpeciesCatchRate("Rattata", 90);
+        zone.pokemon->setSpeciesCatchRate("Pikachu", 30);
+        zone.pokemon->setSpeciesCatchRate("Articuno", 3);
+        zone.pokemon->setSpeciesCatchRate("Zapdos", 3);
+        zone.pokemon->setSpeciesCatchRate("Moltres", 3);
+        zone.pokemon->setSpeciesCatchRate("Mewtwo", 2);
+    }
+}
+
+:> ========================================
+:> Helper Functions
+:> ========================================
+
+define getRarity(pokemonName) {
+    if (pokemonName == "Articuno" || pokemonName == "Zapdos" || pokemonName == "Moltres" || pokemonName == "Mewtwo") {
+        return "LEGENDARY";
+    }
+    if (pokemonName == "Dratini" || pokemonName == "Lapras" || pokemonName == "Snorlax" || pokemonName == "Chansey") {
+        return "RARE";
+    }
+    if (pokemonName == "Pikachu" || pokemonName == "Eevee" || pokemonName == "Jigglypuff" || pokemonName == "Meowth") {
+        return "UNCOMMON";
+    }
+    return "COMMON";
+}
+
+define showStatus(zone, team, caught) {
+    print("");
+    print("--- Your Status ---");
+    print("Safari Balls: " + zone.balls + "/" + zone.initialBalls);
+    print("Turns Left: " + zone.turns + "/" + zone.initialTurns);
+    print("Team Size: " + length(caught) + "/" + team.maxSize);
+    if (length(caught) > 0) {
+        print("Your Team: " + caught);
+    }
+    print("");
+}
+
+define showMenu() {
+    print("What would you like to do?");
+    print("  1. Continue exploring");
+    print("  2. Check status");
+    print("  3. Quit safari");
+    print("");
+    print("Enter choice:");
+}
+
+:> ========================================
+:> Game Introduction
+:> ========================================
+
+print("╔════════════════════════════════════════╗");
+print("║        Entering Safari Zone!           ║");
+print("╚════════════════════════════════════════╝");
+print("");
+print("You have " + zone.balls + " Safari Balls");
+print("You have " + zone.turns + " turns");
+print("Goal: Catch up to 6 Pokemon!");
+print("");
+
+:> ========================================
+:> Main Game Loop
+:> ========================================
+
+var encounterCount = 0;
+var caughtPokemon = [];
+var gameActive = true;
+
+while (gameActive) {
+    :> Show menu
+    showMenu();
+    var choice = readInt();
+    print("");
+
+    if (choice == 1) {
+        :> Continue exploring
+        print("You venture deeper into the Safari Zone...");
+        print("");
+
+        :> Check game over conditions
+        if (zone.pokemon->isEmpty()) {
+            print("The Safari Zone is empty!");
+            print("All Pokemon have been encountered.");
+            gameActive = false;
+        } else {
+            if (zone.turns <= 0) {
+                print("You've run out of turns!");
+                gameActive = false;
+            } else {
+                if (zone.balls <= 0) {
+                    print("You've run out of Safari Balls!");
+                    gameActive = false;
+                } else {
+                    if (length(caughtPokemon) >= 6) {
+                        print("Your team is full!");
+                        gameActive = false;
+                    } else {
+                        :> Get random encounter using random() method
+                        var currentEncounter = zone.pokemon->random();
+                        encounterCount = encounterCount + 1;
+                        zone->useTurn();
+
+                        var rarity = getRarity(currentEncounter);
+
+                        print("╔════════════════════════════════════════╗");
+                        print("║  [" + rarity + "] Wild " + currentEncounter + " appeared!");
+                        print("╚════════════════════════════════════════╝");
+                        print("");
+
+                        :> Ask what to do
+                        print("What will you do?");
+                        print("  1. Throw Safari Ball");
+                        print("  2. Run away");
+                        print("");
+                        print("Enter choice:");
+                        var action = readInt();
+                        print("");
+
+                        if (action == 1) {
+                            :> Try to catch
+                            print("You throw a Safari Ball at " + currentEncounter + "...");
+                            print("");
+
+                            var caught = zone. pokemon->attemptCatch(currentEncounter, zone);
+
+                            if (caught) {
+                                print("★★★ SUCCESS! ★★★");
+                                print("You caught " + currentEncounter + "!");
+
+                                if (rarity == "LEGENDARY") {
+                                    print("");
+                                    print("╔════════════════════════════════════════╗");
+                                    print("║   LEGENDARY POKEMON CAPTURED!          ║");
+                                    print("╚════════════════════════════════════════╝");
+                                }
+
+                                print("");
+
+                                :> Add to team
+                                team. pokemon->add(currentEncounter);
+                                caughtPokemon = concat(caughtPokemon, [currentEncounter]);
+
+                                print("Added " + currentEncounter + " to your team!");
+                                print("Team: " + length(caughtPokemon) + "/6");
+
+                                :> Check if team is full
+                                if (length(caughtPokemon) >= 6) {
+                                    print("");
+                                    print("╔════════════════════════════════════════╗");
+                                    print("║       YOUR TEAM IS FULL!               ║");
+                                    print("╚════════════════════════════════════════╝");
+                                    gameActive = false;
+                                }
+                            } else {
+                                print("Oh no! " + currentEncounter + " broke free!");
+                                print(currentEncounter + " ran away!");
+                            }
+                        } else {
+                            print("You chose to run away.");
+                            print(currentEncounter + " disappeared into the grass.");
+                        }
+
+                        print("");
+                    }
+                }
+            }
+        }
+    } else {
+        if (choice == 2) {
+            :> Check status
+            showStatus(zone, team, caughtPokemon);
+        } else {
+            if (choice == 3) {
+                :> Quit
+                print("Are you sure you want to leave?  (1=Yes, 2=No)");
+                var confirm = readInt();
+                print("");
+                if (confirm == 1) {
+                    print("You decided to leave the Safari Zone.");
+                    gameActive = false;
+                } else {
+                    print("Continuing adventure!");
+                }
+            } else {
+                print("Invalid choice. Please enter 1, 2, or 3.");
+                print("");
+            }
+        }
+    }
+}
+
+:> ========================================
+:> Game Over - Results
+:> ========================================
+
+print("");
+print("╔════════════════════════════════════════╗");
+print("║     Safari Zone Adventure Over!        ║");
+print("╚════════════════════════════════════════╝");
+print("");
+
+print("=== " + playerName + "'s Adventure Summary ===");
+print("");
+print("Encounters: " + encounterCount);
+print("Pokemon Caught: " + length(caughtPokemon));
+print("");
+
+if (length(caughtPokemon) > 0) {
+    print("Your Final Team:");
+    for (i in 0 to length(caughtPokemon) - 1) {
+        var pokemon = caughtPokemon[i];
+        var pokemonRarity = getRarity(pokemon);
+        print("  " + (i + 1) + ". " + pokemon + " [" + pokemonRarity + "]");
+    }
+    print("");
+
+    :> Count rarities
+    var legendaryCount = 0;
+    var rareCount = 0;
+
+    for (i in 0 to length(caughtPokemon) - 1) {
+        var poke = caughtPokemon[i];
+        var pokeRarity = getRarity(poke);
+
+        if (pokeRarity == "LEGENDARY") {
+            legendaryCount = legendaryCount + 1;
+        }
+        if (pokeRarity == "RARE") {
+            rareCount = rareCount + 1;
+        }
+    }
+
+    print("Legendary Pokemon: " + legendaryCount);
+    print("Rare Pokemon: " + rareCount);
+    print("");
+
+    :> Rating
+    print("=== Trainer Rating ===");
+    print("");
+
+    if (legendaryCount >= 2) {
+        print("★★★★★ LEGENDARY MASTER!");
+        print("You caught multiple legendary Pokemon!");
+    } else {
+        if (legendaryCount == 1) {
+            print("★★★★☆ LEGENDARY TRAINER!");
+            print("You caught a legendary Pokemon!");
+        } else {
+            if (length(caughtPokemon) >= 6) {
+                print("★★★☆☆ EXPERT TRAINER!");
+                print("You filled your team!");
+            } else {
+                if (length(caughtPokemon) >= 3) {
+                    print("★★☆☆☆ SKILLED TRAINER");
+                    print("Nice collection!");
+                } else {
+                    print("★☆☆☆☆ NOVICE TRAINER");
+                    print("Keep training!");
+                }
+            }
+        }
+    }
+} else {
+    print("You didn't catch any Pokemon.");
+    print("Better luck next time!");
+}
+
+print("");
+print("Thank you for playing, " + playerName + "!");

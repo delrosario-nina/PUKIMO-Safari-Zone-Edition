@@ -1,74 +1,332 @@
-:> PukiMO If/Else Feature Test Suite
+:> ========================================
+:> PukiMO If/Else Test Suite
+:> ========================================
 
-:> ------ Simple if/else -------
-var a = 7;
-if (a > 10) {
-    print("a is greater than 10");
+print("=== If/Else Test Suite ===");
+print("");
+
+:> ========================================
+:> Test 1: Simple If (No Else)
+:> ========================================
+print("--- Test 1: Simple If ---");
+var score = 85;
+if (score > 80) {
+    print("PASS: score > 80");
+}
+print("");
+
+:> ========================================
+:> Test 2: Simple If/Else
+:> ========================================
+print("--- Test 2: If/Else ---");
+var age = 15;
+if (age >= 18) {
+    print("FAIL: age should be < 18");
 } else {
-    print("a is NOT greater than 10");
+    print("PASS: age < 18");
+}
+print("");
+
+:> ========================================
+:> Test 3: Comparison Operators
+:> ========================================
+print("--- Test 3: Comparisons ---");
+
+var a = 10;
+var b = 20;
+
+if (a == b) {
+    print("FAIL: a should not equal b");
+} else {
+    print("PASS: a not equal b");
 }
 
-:> ------ Nested if/else -------
-var y = 3;
-if (y % 2 == 1) {
-    if (y > 5) {
-        print("odd and big");
+if (a < b) {
+    print("PASS: a less than b");
+} else {
+    print("FAIL: a should be less than b");
+}
+
+if (a <= 10) {
+    print("PASS: a less than or equal 10");
+} else {
+    print("FAIL: a should be <= 10");
+}
+print("");
+
+:> ========================================
+:> Test 4: Logical AND
+:> ========================================
+print("--- Test 4: AND operator ---");
+
+var temp = 25;
+var humidity = 60;
+
+if (temp > 20 && humidity < 70) {
+    print("PASS: both conditions true");
+} else {
+    print("FAIL: both should be true");
+}
+
+if (temp > 30 && humidity < 70) {
+    print("FAIL: first condition false");
+} else {
+    print("PASS: first condition false");
+}
+print("");
+
+:> ========================================
+:> Test 5: Logical OR
+:> ========================================
+print("--- Test 5: OR operator ---");
+
+var x = 5;
+var y = 15;
+
+if (x > 10 || y > 10) {
+    print("PASS: at least one true");
+} else {
+    print("FAIL: y > 10 is true");
+}
+
+if (x > 10 || y < 10) {
+    print("FAIL: both conditions false");
+} else {
+    print("PASS: both conditions false");
+}
+print("");
+
+:> ========================================
+:> Test 6: Logical NOT
+:> ========================================
+print("--- Test 6: NOT operator ---");
+
+var isRaining = false;
+
+if (!isRaining) {
+    print("PASS: not raining");
+} else {
+    print("FAIL: should be not raining");
+}
+
+var count = 0;
+if (!(count > 0)) {
+    print("PASS: count not greater than 0");
+} else {
+    print("FAIL: count should not be > 0");
+}
+print("");
+
+:> ========================================
+:> Test 7: Nested If/Else
+:> ========================================
+print("--- Test 7: Nested If/Else ---");
+
+var num = 7;
+if (num % 2 == 0) {
+    print("FAIL: 7 is not even");
+} else {
+    if (num > 5) {
+        print("PASS: 7 is odd and > 5");
     } else {
-        print("odd and small");
+        print("FAIL: 7 should be > 5");
+    }
+}
+print("");
+
+:> ========================================
+:> Test 8: String Comparison
+:> ========================================
+print("--- Test 8: String Comparison ---");
+
+var name = "Ash";
+var trainer = "Ash";
+
+if (name == trainer) {
+    print("PASS: strings match");
+} else {
+    print("FAIL: strings should match");
+}
+
+if (name != "Gary") {
+    print("PASS: strings differ");
+} else {
+    print("FAIL: strings should differ");
+}
+print("");
+
+:> ========================================
+:> Test 9: Boolean Variables
+:> ========================================
+print("--- Test 9: Booleans ---");
+
+var isActive = true;
+var isDisabled = false;
+
+if (isActive) {
+    print("PASS: isActive is true");
+} else {
+    print("FAIL: isActive should be true");
+}
+
+if (isActive && !isDisabled) {
+    print("PASS: active and not disabled");
+} else {
+    print("FAIL: should be active and not disabled");
+}
+print("");
+
+:> ========================================
+:> Test 10: Variable Assignment
+:> ========================================
+print("--- Test 10: Assignment in Branches ---");
+
+var points = 50;
+var bonus = 0;
+
+if (points >= 100) {
+    bonus = 20;
+} else {
+    bonus = 10;
+}
+
+if (bonus == 10) {
+    print("PASS: bonus is 10");
+} else {
+    print("FAIL: bonus should be 10");
+}
+print("");
+
+:> ========================================
+:> Test 11: Complex Conditions
+:> ========================================
+print("--- Test 11: Complex Conditions ---");
+
+var level = 50;
+var exp = 8000;
+var hasBadge = true;
+
+if ((level >= 50 && exp >= 5000) || hasBadge) {
+    print("PASS: eligible for Elite Four");
+} else {
+    print("FAIL: should be eligible");
+}
+print("");
+
+:> ========================================
+:> Test 12: Array Length
+:> ========================================
+print("--- Test 12: Array Length ---");
+
+var team = ["Pikachu", "Charizard"];
+var emptyTeam = [];
+
+if (length(team) > 0) {
+    print("PASS: team has pokemon");
+} else {
+    print("FAIL: team should have pokemon");
+}
+
+if (length(emptyTeam) == 0) {
+    print("PASS: empty team detected");
+} else {
+    print("FAIL: team should be empty");
+}
+print("");
+
+:> ========================================
+:> Test 13: Function Returns
+:> ========================================
+print("--- Test 13: Function Returns ---");
+
+define isEven(n) {
+    if (n % 2 == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+if (isEven(10)) {
+    print("PASS: 10 is even");
+} else {
+    print("FAIL: 10 should be even");
+}
+
+if (isEven(7)) {
+    print("FAIL: 7 is not even");
+} else {
+    print("PASS: 7 is odd");
+}
+print("");
+
+:> ========================================
+:> Test 14: If/Else in Loops
+:> ========================================
+print("--- Test 14: If/Else in Loops ---");
+
+var evenCount = 0;
+for (i in 1 to 10) {
+    if (i % 2 == 0) {
+        evenCount = evenCount + 1;
+    }
+}
+
+if (evenCount == 5) {
+    print("PASS: found 5 even numbers");
+} else {
+    print("FAIL: should find 5 even numbers");
+}
+print("");
+
+:> ========================================
+:> Test 15: Deep Nesting
+:> ========================================
+print("--- Test 15: Deep Nesting ---");
+
+var n = 15;
+
+if (n > 0) {
+    if (n > 10) {
+        if (n < 20) {
+            print("PASS: n is between 10 and 20");
+        } else {
+            print("FAIL: n should be < 20");
+        }
+    } else {
+        print("FAIL: n should be > 10");
     }
 } else {
-    print("even");
+    print("FAIL: n should be positive");
 }
+print("");
 
-:> ------ Multiple if/else chain -------
-var x = 25;
-if (x < 10) {
-    print("small");
+:> ========================================
+:> Test 16: Edge Cases
+:> ========================================
+print("--- Test 16: Edge Cases ---");
+
+var zero = 0;
+var negative = -5;
+
+if (zero == 0) {
+    print("PASS: zero equality");
 } else {
-    print("not small");
+    print("FAIL: zero should equal 0");
 }
 
-if (x < 20) {
-    print("medium-ish");
+if (negative < 0) {
+    print("PASS: negative detection");
 } else {
-    print("not medium-ish");
+    print("FAIL: should detect negative");
 }
+print("");
 
-if (temp > 30 && hum<80) {
-    print("large");
-} else {
-    print("not large");
-}
-
-:> ------ Boolean expression -------
-var flag = true;
-if (!flag) {
-    print("should not print");
-} else {
-    print("flag is true");
-}
-
-:> ------ Test with variable assignment and prints -------
-var b = 100;
-if (b == 100) {
-    print("b is 100");
-    b = 200;
-} else {
-    print("b is not 100");
-}
-print(b);
-
-
-
-define makeCounter() {
-    var count = 0;
-    define increment() {
-        count = count + 1;
-        return count;
-    }
-    return increment;
-}
-
-var counter = makeCounter();
-print (counter());
-print (counter());
+:> ========================================
+:> Final Summary
+:> ========================================
+print("=================================");
+print("  If/Else Test Suite Complete");
+print("=================================");
+print("");
+print("Review output for FAIL messages");

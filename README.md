@@ -7,265 +7,1070 @@ Nina Claudia Del Rosario
 
 ## Language Overview
 
-_PUKIMO Safari Zone Edition_ is a dynamically-typed, Pokémon-themed domain-specific language (DSL) for simulating a Safari Zone adventure. Players explore, encounter wild Pokémon, throw Safari Balls, and manage their team. The DSL uses declarative, narrative-style commands focused on exploration and chance-based catching.
+**PUKIMO Safari Zone Edition** is a dynamically-typed, Pokémon-themed domain-specific language (DSL) for simulating Safari Zone adventures. Players explore zones, encounter wild Pokémon, attempt catches with Safari Balls, and build their dream team. The language combines imperative programming with domain-specific constructs focused on exploration and chance-based gameplay.
 
 ### Main Characteristics
 
-1. Simple object-oriented style with lightweight syntax.
-2. Built-in types for SafariZone, Team, and Pokemon.
-3. Declarative DSL-style commands (explore, throwBall, filter).
-4. Attributes like nature, behavior, friendliness, and shiny.
-5. Human-readable syntax and fun comments.
+1. **Dynamic typing** with runtime type checking
+2. **Object-oriented** Safari Zone and Team management
+3. **Domain-specific** exploration with the `explore` statement
+4. **First-class functions** with closures
+5. **Interactive gameplay** with user input
+6. **Probability-based** catching mechanics
+7.  **Human-readable** syntax with Pokémon theming
+    
+---
 
 ## Keywords & Built-in Constructs
 
-### Implemented
+### Core Language
 
-- _var_ – Declares a variable
-- _true_ / _false_ – Boolean literals
-- _null_ – Absence of a value
-- _print_ – Console output
-- _SafariZone_ – Built-in game zone object
-- _Team_ – Built-in object for caught Pokémon
-- _define_ – Declares a user-defined function
-- _return_ – Returns a value from a function
-- _explore_ – Safari loop
-- _run_ – Exits current loop
-- _if/else_ – Conditional blocks
+| Keyword | Purpose |
+|---------|---------|
+| `var` | Variable declaration |
+| `define` | Function definition |
+| `return` | Function return |
+| `if` / `else` | Conditional execution |
+| `while` | Loop statement |
+| `for` / `in` / `to` | Range-based loop |
+| `break` | Exit loop |
+| `continue` | Skip to next iteration |
+| `print` | Console output |
+| `true` / `false` | Boolean literals |
+| `null` | Null value |
 
-### Reserved / For Future:
+### Safari Zone Specific
 
-- _throwBall_ – Attempts to catch a Pokémon (future)
-- More advanced properties and methods (see below)
+| Keyword | Purpose |
+|---------|---------|
+| `explore` | Iterate through Safari Zone encounters |
+| `run` | Exit exploration early |
+| `encounter` | Contextual variable for current Pokémon (only in `explore`) |
+| `SafariZone` | Safari Zone constructor |
+| `Team` | Trainer team constructor |
 
-## Functions
-
-### New Syntax: Type-Annotated Parameters
-
-Functions must specify parameter types:
-
-puki
-define greet(name: string) {
-print("Hello, " + name);
-}
-
-define add(a: int, b: int) {
-print(a + b);
-}
-
-Valid parameter types:  
-int, string, bool, double, SafariZone, Team, object, pokemon
-
-## Built-in Functions
-
-- _length(x)_ – Returns length of a string, size of a collection, or pokemonCount for SafariZone/Team.
-  - Example: length("Pikachu") // 7
-  - Example: length(team.trainerName)
-  - Example: length(zone.pokemon)
-- _readString()_ – Reads a line of input as string.
-- _readInt()_ – Reads a line of input as integer.
-
-_Note:_  
-Use length(x) for string/collection length, not the arrow operator:
-puki
-length("Bulbasaur");
-length(team.trainerName);
-length(zone.pokemon);
+---
 
 ## Types
 
-- _int_ – Integer number
-- _string_ – Text
-- _bool_ – Boolean
-- _double_ – Floating-point number (if enabled)
-- _SafariZone_ – Zone object
-- _Team_ – Team object
-- _object_ – Generic object
-- _pokemon_ – Pokémon object
+PukiMO is dynamically typed.  The following types exist at runtime:
 
-## Properties & Methods
+- **int** – Integer numbers
+- **string** – Text strings
+- **bool** – `true` or `false`
+- **null** – Absence of value
+- **Array** – Mutable lists (created with `[...]`)
+- **Function** – User-defined functions with closures
+- **SafariZone** – Safari Zone game object
+- **Team** – Pokémon team object
+- **PokemonCollection** – Internal collection type
 
-### 1. SafariZone
+---
+## Variable Scoping
 
-_Constructor:_  
-SafariZone(balls: int, turns: int)
+Variables can be shadowed in nested scopes:
 
-_Properties:_
+```javascript
+var outer = "global";
 
-- initialBalls, initialTurns (read-only)
-- balls, turns
-- pokemonCount (read-only)
-- pokemon – a PokemonCollection
+{
+    var inner = "block scope";
+    print(outer);  :> "global" (reads from parent scope)
 
-_Methods:_
+    var outer = "shadowed";  :> New variable in block scope
+    print(outer);  :> "shadowed"
+}
 
-- useBall(), useTurn(), reset(), isGameOver()
-- Collection: add, remove, list, find, random, count, clear, isEmpty (via .pokemon->method())
+print(outer);  :> "global" (block scope doesn't affect outer)
+## Functions
 
-_Example:_
-puki
-var zone = SafariZone(30, 500);
+### User-Defined Functions
+
+```javascript
+define greet(name) {
+    print("Hello, " + name + "!");
+}
+
+define add(a, b) {
+    return a + b;
+}
+
+:> Functions with closures
+define makeCounter() {
+    var count = 0;
+    define increment() {
+        count = count + 1;
+        return count;
+    }
+    return increment;
+}
+
+var counter = makeCounter();
+print(counter());  :> 1
+print(counter());  :> 2
+```
+
+### Built-in Functions
+
+| Function | Description | Example |
+|----------|-------------|---------|
+| `length(x)` | Returns length of string or array | `length("Pikachu")` → `7` |
+| `push(array, item)` | Adds item to end of array | `push(arr, "Pikachu")` |
+| `readString()` | Reads user input as string | `var name = readString();` |
+| `readInt()` | Reads user input as integer | `var age = readInt();` |
+| `contains(array, item)` | Checks if array contains item | `contains(team, "Pikachu")` |
+| `concat(arr1, arr2)` | Concatenates two arrays | `concat([1, 2], [3, 4])` |
+---
+
+## SafariZone Object
+
+### Supported Constructor Declaration
+
+```
+var zone = SafariZone(balls=30, turns=500);
+var zone = SafariZone(); 
+var zone = SafariZone(10,10)
+```
+
+**Parameters:**
+- `balls` – Number of Safari Balls
+- `turns` – Number of turns allowed
+
+### Properties
+
+| Property | Type | Access | Description |
+|----------|------|--------|-------------|
+| `balls` | int | Read/Write | Current Safari Balls |
+| `turns` | int | Read/Write | Current turns remaining |
+| `initialBalls` | int | Read-only | Starting balls |
+| `initialTurns` | int | Read-only | Starting turns |
+| `pokemon` | PokemonCollection | Read-only | Pokémon in the zone |
+
+### Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `useBall()` | void | Decrements balls by 1 |
+| `useTurn()` | void | Decrements turns by 1 |
+| `reset()` | void | Resets balls and turns to initial values |
+| `isGameOver()` | bool | Returns true if balls or turns are 0 |
+
+### Pokemon Collection Methods
+
+Access via `zone.pokemon->method()`:
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `add(name)` | string | void | Add a Pokémon |
+| `addAll(array)` | array | void | Add multiple Pokémon |
+| `remove(name)` | string | bool | Remove a Pokémon |
+| `find(name)` | string | string/null | Find Pokémon by name |
+| `random()` | - | string | Get random Pokémon |
+| `list()` | - | array | Get all Pokémon as array |
+| `count()` | - | int | Number of Pokémon |
+| `isEmpty()` | - | bool | Check if empty |
+| `clear()` | - | void | Remove all Pokémon |
+| `setCatchRate(rate)` | int (0-100) | void | Set global catch rate % |
+| `setSpeciesCatchRate(name, rate)` | string, int | void | Set species-specific catch rate % |
+| `attemptCatch(name, zone)` | string, SafariZone | bool | Attempt to catch (consumes ball) |
+
+### Example
+
+```
+var zone = SafariZone(balls=30, turns=500);
+
+:> Add Pokémon to zone
 zone.pokemon->add("Pikachu");
-print(zone.pokemon->list());
-var encounter = zone.pokemon->random();
+zone. pokemon->addAll(["Bulbasaur", "Charmander", "Squirtle"]);
+
+:> Set catch rates
+zone.pokemon->setCatchRate(50);  :> 50% global rate
+zone.pokemon->setSpeciesCatchRate("Pikachu", 30);  :> 30% for Pikachu
+
+:> Check contents
+print("Pokémon in zone: " + zone.pokemon->count());
+print("List: " + zone.pokemon->list());
+
+:> Use resources
 zone->useBall();
+zone->useTurn();
+print("Game over?  " + zone->isGameOver());
+```
 
-### 2. Team
+---
 
-_Constructor:_  
-Team(trainerName: string, maxSize: int = 6)
+## Team Object
 
-_Properties:_
+### Constructor
 
-- trainerName, maxSize, pokemonCount, pokemon
+```javascript
+var team = Team("Ash");  :> Default maxSize=6
+var team = Team("Misty", maxSize=3);
+```
 
-_Methods:_
+**Parameters:**
+- `trainerName` – Trainer's name (required)
+- `maxSize` – Maximum team size (optional, default=6)
 
-- isFull(), isEmpty(), has(name)
-- Collection methods: add, remove, list, find, random, count, clear, isEmpty (via .pokemon->method())
+### Properties
 
-_Example:_
-puki
-var team = Team("Ash", 6);
+| Property | Type | Access | Description |
+|----------|------|--------|-------------|
+| `trainerName` | string | Read-only | Trainer's name |
+| `maxSize` | int | Read-only | Maximum team size |
+| `pokemonCount` | int | Read-only | Current team size |
+| `pokemon` | PokemonCollection | Read-only | Team's Pokémon |
+
+### Methods
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `isFull()` | - | bool | Check if team is full |
+| `isEmpty()` | - | bool | Check if team is empty |
+| `has(name)` | string | bool | Check if team has Pokémon |
+
+### Pokemon Collection Methods
+
+Access via `team. pokemon->method()`:
+
+Same methods as SafariZone pokemon collection (add, remove, list, etc.)
+
+### Example
+
+```
+var team = Team("Ash", maxSize=6);
+
+:> Add Pokémon
+team.pokemon->add("Pikachu");
 team.pokemon->add("Charizard");
-print(team.pokemon->list());
-var hasPika = team->has("Pikachu");
+
+:> Check team
+print("Team: " + team.pokemon->list());
+print("Size: " + team.pokemonCount + "/" + team.maxSize);
+
+if (team->isFull()) {
+    print("Team is full!");
+}
+
+if (team->has("Pikachu")) {
+    print("Pikachu is on the team!");
+}
+```
+
+---
+
+## Explore Statement
+
+The `explore` statement iterates through Safari Zone encounters with a special contextual variable `encounter`.
+
+### Syntax
+
+```
+explore(safariZone) {
+    :> 'encounter' variable is automatically available here
+    print("Wild " + encounter + " appeared!");
+    
+    if (encounter == "Mew") {
+        break;
+    }
+}
+```
+
+### The `encounter` Variable
+
+- **Contextual keyword** – Only valid inside `explore` blocks
+- **Automatically bound** to current Pokémon name
+- **Read-only** – Cannot be reassigned
+- **Scoped** – Not accessible outside `explore`
+
+### Example: Complete Safari
+
+```
+var zone = SafariZone(balls=30, turns=500);
+var team = Team("Player", maxSize=6);
+
+zone.pokemon->addAll(["Pidgey", "Rattata", "Pikachu", "Eevee"]);
+zone.pokemon->setCatchRate(50);
+zone.pokemon->setSpeciesCatchRate("Pikachu", 30);
+
+explore(zone) {
+    print("Encountered: " + encounter);
+    
+    :> Check if we have balls
+    if (zone.balls > 0) {
+        var caught = zone.pokemon->attemptCatch(encounter, zone);
+        
+        if (caught) {
+            team. pokemon->add(encounter);
+            print("Caught " + encounter + "!");
+            
+            :> Exit if team is full
+            if (team. pokemonCount >= team.maxSize) {
+                print("Team is full!");
+                break;
+            }
+        }
+    }
+}
+
+print("Final team: " + team.pokemon->list());
+```
+
+---
 
 ## Operators
 
-- Arithmetic: +, -, \*, /, %
-- Comparison: <, >, ==, !=, >=, <=
-- Logical: &&, ||, !
-- Assignment: =
-- Method call: ->
-- Property access: .
+### Arithmetic
 
-## Literals
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `+` | Addition / String concatenation | `5 + 3`, `"Hi" + "!"` |
+| `-` | Subtraction | `10 - 4` |
+| `*` | Multiplication | `6 * 7` |
+| `/` | Division | `20 / 4` |
+| `%` | Modulo | `17 % 5` |
 
-- _int_: 123
-- _string_: "Hello"
-- _bool_: true / false
-- _null_: null
+### Comparison
 
-## Identifiers
+| Operator | Description | Example |
+|----------|-------------|---------|
+| `==` | Equal | `x == 5` |
+| `!=` | Not equal | `x != 5` |
+| `<` | Less than | `x < 10` |
+| `>` | Greater than | `x > 10` |
+| `<=` | Less than or equal | `x <= 10` |
+| `>=` | Greater than or equal | `x >= 10` |
 
-- Start: letter or \_
-- Contain: letters, digits, \_
-- Cannot be reserved keywords
-- Case-sensitive
+### Logical
 
-Recommended style:
+| Operator | Description | Example        |
+|---------|--|----------------|
+| `&&`    | Logical AND | `x > 5 && x < 10` |
+| '\|\|'  | Logical OR | `x < 5 || x > 10` |
+| `!`     | Logical NOT | `!isActive`    |
 
-- Variables/function: camelCase
-- Objects/constants: PascalCase
+### Special
+
+| Operator | Purpose | Usage |
+|----------|---------|-------|
+| `. ` | Property access | `zone.balls` |
+| `->` | Method call | `zone->useBall()` |
+| `=` | Assignment | `x = 5` |
+| `[]` | Array access | `arr[0]` |
+
+---
+
+## Arrays
+
+## Arrays
+
+Arrays are mutable, dynamically-sized lists.
+
+```javascript
+:> Array literal
+var team = ["Pikachu", "Bulbasaur", "Charmander"];
+
+:> Access
+print(team[0]);  :> "Pikachu"
+
+:> Assignment
+team[1] = "Ivysaur";
+
+:> Push (add to end)
+var empty = [];
+push(empty, "Pikachu");
+push(empty, "Charmander");
+print(empty);  :> ["Pikachu", "Charmander"]
+
+:> Length
+print(length(team));  :> 3
+
+:> Contains
+if (contains(team, "Pikachu")) {
+    print("Pikachu is here!");
+}
+
+:> Concatenation
+var more = ["Squirtle", "Jigglypuff"];
+var all = concat(team, more);
+---
+
+## Control Flow
+
+### If/Else
+
+```javascript
+if (zone.balls > 10) {
+    print("Plenty of balls!");
+} else {
+    print("Running low!");
+}
+```
+
+### While Loop
+
+```javascript
+var i = 0;
+while (i < 5) {
+    print(i);
+    i = i + 1;
+}
+```
+
+### For Loop
+
+```javascript
+for (i in 0 to 9) {
+    print("Count: " + i);
+}
+
+for (i in 1 to 10) {
+    if (i % 2 == 0) {
+        print(i + " is even");
+    }
+}
+```
+
+### Break and Continue
+
+```javascript
+for (i in 1 to 10) {
+    if (i == 5) {
+        break;  :> Exit loop
+    }
+    if (i % 2 == 0) {
+        continue;  :> Skip even numbers
+    }
+    print(i);
+}
+```
+
+---
 
 ## Comments
 
-- Single line: :> this is a comment
-- Multi-line: /_ ... _/
-- No support for nested comments
+```javascript
+:> Single-line comment
 
-## Syntax Summary
+/* Multi-line
+   comment */
+```
 
-- Semicolons required: print("Hello!");
-- Blocks with { ... } (for functions, conditionals, loops)
-- Method calls: object->method(args);
-- Property access: object.property
-- Line breaks allowed, but semicolon must end statements
+---
 
-## Updated Grammar
+## Identifiers
 
-(See _Parser.kt_ for full BNF.)
+- **Start with:** letter or `_`
+- **Contain:** letters, digits, `_`
+- **Case-sensitive:** `myVar` ≠ `MyVar`
+- **Cannot be keywords**
 
-- _Function definition:_  
-  define IDENTIFIER ( paramList ) Block
+**Recommended Style:**
+- Variables/functions: `camelCase`
+- Constants/Objects: `PascalCase`
 
-  - paramList → param (',' param)\*
-  - param → IDENTIFIER : TYPE
+---
 
-- _Built-in call:_  
-  length(expr)  
-  readString()  
-  readInt()
+## Complete Example: Interactive Safari
 
-## Sample Code
+```javascript
+print("Welcome to Safari Zone!");
+print("What is your name?");
+var playerName = readString();
 
-puki
-:> SafariZone methods
-var zone = SafariZone(30, 100);
-zone.pokemon->add("Pikachu");
-zone->useBall();
-print("Balls remaining: " + zone.balls);
+print("Choose difficulty (1=Easy, 2=Normal, 3=Hard):");
+var difficulty = readInt();
 
-:> Team management
-var team = Team("Ash", 6);
-team.pokemon->add("Charizard");
-print("Team: " + team.pokemon->list());
-print("Team size: " + length(team.pokemon)); // <== new built-in
+var balls = 30;
+var turns = 500;
 
-:> Function usage
-define shout(name: string) {
-print("Wow! " + name + " appeared!");
+if (difficulty == 1) {
+    balls = 50;
+    turns = 1000;
+} else {
+    if (difficulty == 3) {
+        balls = 15;
+        turns = 200;
+    }
 }
-shout("Mewtwo");
 
-define teamSize(t: Team) {
-print(length(t.pokemon));
+var zone = SafariZone(balls=balls, turns=turns);
+var team = Team(playerName, maxSize=6);
+
+zone.pokemon->addAll(["Pidgey", "Rattata", "Pikachu", "Eevee", "Dratini", "Articuno"]);
+zone.pokemon->setCatchRate(50);
+zone.pokemon->setSpeciesCatchRate("Articuno", 3);
+
+var encounterCount = 0;
+
+explore(zone) {
+    encounterCount = encounterCount + 1;
+    print("Wild " + encounter + " appeared!");
+    
+    if (zone.balls > 0) {
+        var caught = zone.pokemon->attemptCatch(encounter, zone);
+        
+        if (caught) {
+            team.pokemon->add(encounter);
+            print("Caught " + encounter + "!");
+            
+            if (team.pokemonCount >= team.maxSize) {
+                print("Team is full!");
+                break;
+            }
+        } else {
+            print(encounter + " escaped!");
+        }
+    }
 }
-teamSize(team);
 
-:> Input
-print("Enter your name:");
-var trainer = readString();
-print("Hello, " + trainer);
+print("");
+print("=== Adventure Complete ===");
+print("Encounters: " + encounterCount);
+print("Final Team: " + team.pokemon->list());
+print("Thanks for playing, " + playerName + "!");
+```
 
-:> String length
-print("Length: " + length(trainer));
-
-## Error Handling
-
-- Type mismatch errors in function calls.
-- "Cannot call method on non-object type" if arrow operator (->) used on primitive types (e.g., string).
-- Helpful runtime error messages for undefined variables, unauthorized assignments, etc.
+---
 
 ## Running PukiMO
 
 ### Compilation
 
-# Compile to executable JAR
+```bash
+kotlinc src/*. kt -include-runtime -d PukiMO.jar
+```
 
-kotlinc src/\*.kt -include-runtime -d PukiMO.jar
+### Run Script
 
-### Running Scripts
+```bash
+java -jar PukiMo.jar examples/test_pukimo.txt
+```
 
-kotlin -cp PukiMO.jar MainKt <script-file>
+---
 
-# Example:
+## Error Handling
 
-kotlin -cp PukiMO.jar MainKt safari.txt
+PukiMO provides clear, helpful error messages:
 
-### REPL Mode
+- **Type errors:** "Cannot call method on non-object type"
+- **Undefined variables:** "Undefined variable 'x'" with hint "Did you forget to declare with 'var'?"
+- **Arity errors:** "Expected 2 arguments but got 1"
+- **Array errors:** "Array index 5 out of bounds (size 3)"
+- **Game errors:** "No Safari Balls remaining!"
 
-kotlin -cp PukiMO.jar MainKt
-
-## Test Suite
-
-Includes files to test:
-
-- Basic features: variables, print, arithmetic, logic
-- All operators
-- Object methods and properties
-- Function definition/call with types
-- Built-in functions: length, input
-- Error cases (type mismatch, bad method call)
-- Full Safari adventure
+---
 
 ## Design Rationale
 
-- Single implicit trainer simplifies code.
-- Pokémon-flavored properties for immersion.
-- Arrow operator for methods, dot for properties.
-- Clear, English-like syntax.
-- Required semicolons for easier parsing.
-- Minimalist, readable control flow.
-- Rich comments for engaging code.
+1. **Contextual `encounter` keyword** – Clean syntax for exploration
+2. **Arrow operator** (`->`) – Distinguishes methods from properties
+3. **Implicit probability** – Catch mechanics hidden for simplicity
+4. **Closures** – Enable advanced patterns while staying simple
+5. **Domain-specific** – Safari Zone concepts are first-class
+6. **Interactive** – Built-in input for engaging gameplay
+7. **Pokémon theming** – Fun, immersive language for fans
+
+
+## Context-Free Grammar (CFG)
+
+### Notation
+
+- `→` : Production rule
+- `|` : Alternative (OR)
+- `*` : Zero or more
+- `+` : One or more
+- `?` : Optional (zero or one)
+- `ε` : Empty production
+- `TERMINAL` : Terminal symbols (uppercase)
+- `nonTerminal` : Non-terminal symbols (camelCase)
+
+---
+
+### Program Structure
+
+```
+program           → statement* EOF
+
+statement         → ifStmt
+                  | nonIfStmt
+
+nonIfStmt         → varDecl
+                  | printStmt
+                  | whileStmt
+                  | forStmt
+                  | breakStmt
+                  | continueStmt
+                  | exploreStmt
+                  | returnStmt
+                  | defineStmt
+                  | block
+                  | exprStmt
+
+block             → "{" blockStatements "}"
+
+blockStatements   → statement*
+```
+
+---
+
+### Declarations & Definitions
+
+```
+varDecl           → "var" IDENTIFIER ("=" expression)?  ";"
+
+defineStmt        → "define" IDENTIFIER parameterList block
+
+parameterList     → "(" (IDENTIFIER ("," IDENTIFIER)*)? ")"
+```
+
+---
+
+### Statements
+
+```
+printStmt         → "print" "(" expression ")" ";"
+
+exprStmt          → expression ";"? 
+
+ifStmt            → "if" "(" expression ")" block ("else" block)?
+
+whileStmt         → "while" "(" expression ")" block
+
+forStmt           → "for" "(" IDENTIFIER "in" expression "to" expression ")" block
+
+breakStmt         → "break" ";"
+
+continueStmt      → "continue" ";"
+
+returnStmt        → "return" expression?  ";"
+
+exploreStmt       → "explore" "(" IDENTIFIER ")" block
+              // Inside block: 'encounter' is implicitly bound (read-only)
+
+```
+
+---
+
+### Expressions
+
+```
+expression        → assignExpr
+
+assignExpr        → orExpr ("=" assignExpr)?
+
+orExpr            → andExpr ("||" andExpr)*
+
+andExpr           → equalityExpr ("&&" equalityExpr)*
+
+equalityExpr      → relationalExpr (("==" | "!=") relationalExpr)*
+
+relationalExpr    → additiveExpr (("<" | "<=" | ">" | ">=") additiveExpr)*
+
+additiveExpr      → multiplicativeExpr (("+" | "-") multiplicativeExpr)*
+
+multiplicativeExpr → unaryExpr (("*" | "/" | "%") unaryExpr)*
+
+unaryExpr         → ("!" | "-") unaryExpr
+                  | primaryWithSuffixes
+
+primaryWithSuffixes → primary suffix*
+
+suffix            → "." IDENTIFIER                       // Property access
+                  | "->" IDENTIFIER "(" argumentList ")" // Method call
+                  | "[" expression "]"                   // Array access
+                  | "(" argumentList ")"                 // Function call
+```
+
+---
+
+### Primary Expressions
+
+```
+primary           → NUMERIC_LITERAL
+                  | STRING_LITERAL
+                  | "true"
+                  | "false"
+                  | "null"
+                  | IDENTIFIER
+                  | constructorCall
+                  | arrayLiteral
+                  | "(" expression ")"
+
+constructorCall   → ("SafariZone" | "Team") "(" argumentList ")"
+
+arrayLiteral → "[" elementList "]"
+elementList  → ε | expression ("," expression)*```
+
+---
+
+### Arguments
+
+```
+argumentList      →  ε | argument ("," argument)*
+
+
+argument          → namedArgument
+                  | expression
+
+namedArgument     → IDENTIFIER "=" expression
+```
+
+**Note:** The parser checks for named arguments by looking ahead: if `IDENTIFIER` is followed by `=`, it's a named argument.
+
+---
+
+### Lexical Grammar
+
+```
+NUMERIC_LITERAL   → DIGIT+
+
+STRING_LITERAL    → '"' CHAR* '"'
+
+IDENTIFIER        → (LETTER | "_") (LETTER | DIGIT | "_")*
+
+LETTER            → [a-zA-Z]
+
+DIGIT             → [0-9]
+
+CHAR              → any Unicode character except '"' and '\'
+                  | ESCAPE_SEQUENCE
+
+ESCAPE_SEQUENCE   → "\n" | "\t" | "\"" | "\\"
+```
+
+---
+
+### Keywords (Reserved)
+
+```
+KEYWORD           → "var" | "define" | "return" 
+                  | "if" | "else"
+                  | "while" | "for" | "in" | "to"
+                  | "break" | "continue" 
+                  | "print"
+                  | "true" | "false" | "null"
+                  | "explore" 
+                  | "SafariZone" | "Team"
+```
+
+---
+
+### Tokens (Terminal Symbols)
+
+```
+// Literals
+NUMERIC_LITERAL
+STRING_LITERAL
+BOOLEAN_LITERAL    → "true" | "false"
+NULL_LITERAL       → "null"
+
+// Keywords
+VAR_KEYWORD        → "var"
+DEFINE_KEYWORD     → "define"
+RETURN_KEYWORD     → "return"
+IF_KEYWORD         → "if"
+ELSE_KEYWORD       → "else"
+WHILE_KEYWORD      → "while"
+FOR_KEYWORD        → "for"
+IN_KEYWORD         → "in"
+TO_KEYWORD         → "to"
+BREAK_KEYWORD      → "break"
+CONTINUE_KEYWORD   → "continue"
+PRINT_KEYWORD      → "print"
+EXPLORE_KEYWORD    → "explore"
+SAFARI_ZONE        → "SafariZone"
+TEAM               → "Team"
+
+// Operators
+ASSIGN             → "="
+PLUS               → "+"
+MINUS              → "-"
+MULTIPLY           → "*"
+DIVIDE             → "/"
+MODULO             → "%"
+EQUAL_EQUAL        → "=="
+NOT_EQUAL          → "!="
+LESS_THAN          → "<"
+LESS_EQUAL         → "<="
+GREATER_THAN       → ">"
+GREATER_EQUAL      → ">="
+AND                → "&&"
+OR                 → "||"
+NOT                → "!"
+DOT                → "."
+ARROW              → "->"
+
+// Delimiters
+LEFT_PAREN         → "("
+RIGHT_PAREN        → ")"
+LEFT_BRACE         → "{"
+RIGHT_BRACE        → "}"
+LEFT_BRACKET       → "["
+RIGHT_BRACKET      → "]"
+SEMICOLON          → ";"
+COMMA              → ","
+
+// Special
+IDENTIFIER
+EOF
+```
+
+---
+
+### Contextual Keywords
+
+```
+CONTEXTUAL         → "encounter"  (only valid inside explore blocks)
+```
+
+**Note:** `encounter` is treated as a regular `IDENTIFIER` by the lexer, but has special semantics inside `explore` blocks (validated during evaluation, not parsing).
+
+---
+
+### Operator Precedence (Lowest to Highest)
+
+```
+1. Assignment          =
+2. Logical OR          ||
+3. Logical AND         &&
+4. Equality            == !=
+5. Relational          < <= > >=
+6. Additive            + -
+7.  Multiplicative      * / %
+8. Unary               !  -
+9.  Suffix              . -> [] ()
+```
+
+---
+
+### Associativity
+
+- **Right-associative:** Assignment (`=`), Unary operators (`!`, `-`)
+- **Left-associative:** All other binary operators
+
+---
+
+### Grammar Notes
+
+#### 1. **Statement Disambiguation**
+
+The parser distinguishes `ifStmt` from other statements at the top level:
+
+```
+statement → ifStmt | nonIfStmt
+```
+
+This ensures proper handling of if-else chains.
+
+#### 2. **Suffix Parsing**
+
+The parser uses a loop to handle multiple suffixes:
+
+```kotlin
+while (true) {
+    when {
+        DOT        → parsePropertyAccess()
+        ARROW      → parseMethodCall()
+        LEFT_BRACKET → parseArrayAccess()
+        LEFT_PAREN → parseFunctionCall()
+        else       → break
+    }
+}
+```
+
+This allows chains like:
+```javascript
+zone.pokemon->list()[0]
+team->isFull()
+```
+
+#### 3.  **Named Arguments**
+
+Named arguments are detected by lookahead:
+
+```
+isNamedArgument() → IDENTIFIER followed by "="
+```
+
+Examples:
+```javascript
+SafariZone(balls=30, turns=500)
+Team("Ash", maxSize=6)
+```
+
+#### 4.  **Optional Semicolons in Expression Statements**
+
+```
+exprStmt → expression ";"?
+```
+
+The semicolon is optional for expression statements (checked but not required).
+
+#### 5. **Constructor Recognition**
+
+Constructors are recognized by specific tokens:
+
+```
+primary → ...  | constructorCall
+
+constructorCall → ("SafariZone" | "Team") "(" argumentList ")"
+```
+
+---
+
+### Special Productions
+
+#### SafariZone Constructor
+
+```javascript
+SafariZone()                          // Empty args
+SafariZone(30, 500)                   // Positional
+SafariZone(balls=30, turns=500)       // Named
+SafariZone(turns=500, balls=30)       // Named (order doesn't matter)
+```
+
+**Grammar:**
+```
+constructorCall → "SafariZone" "(" argumentList ")"
+argumentList    → (positional | named) ("," (positional | named))* ")"
+```
+
+#### Team Constructor
+
+```javascript
+Team("Ash")                           // Required positional
+Team("Ash", maxSize=6)                // Positional + named
+```
+
+#### Explore Statement
+
+```javascript
+explore(zoneName) {
+    // 'encounter' is implicitly available
+    print(encounter);
+}
+```
+
+**Grammar:**
+```
+exploreStmt → "explore" "(" IDENTIFIER ")" block
+```
+
+---
+
+### Semantic Constraints (Not Enforced by CFG)
+
+These are validated during parsing or evaluation:
+
+1. **Variables must be declared before use**
+2.  **`return` only valid inside functions**
+3. **`break` and `continue` only valid inside loops**
+4. **`encounter` only valid inside `explore` blocks** (read-only)
+5. **Cannot assign to read-only identifiers** (`encounter`)
+6. **Cannot use reserved words as variable names** (`encounter` in certain contexts)
+7. **Property access (`.`) vs method calls (`->`)**:
+    - `. ` must NOT be followed by `(`
+    - `->` must BE followed by `(`
+8. **Array indices must be integers** (runtime check)
+9. **Constructor names are special-cased** (`SafariZone`, `Team`)
+10. **Cannot mix positional and named arguments in the same call**
+    - Once a named argument is used, ALL arguments must be named
+    - Once a positional argument is used, ALL arguments must be positional
+---
+
+### Error Recovery
+
+The parser implements **synchronization** on errors:
+
+1. **Skip to statement boundary** (`;`)
+2. **Skip to statement keyword** (`var`, `if`, `while`, etc.)
+3. **Add contextual hints** for unclosed delimiters (`(`, `{`)
+
+---
+
+### Extended BNF (EBNF) Summary
+
+```ebnf
+program    ::= statement* EOF
+statement  ::= ifStmt | nonIfStmt
+nonIfStmt  ::= varDecl | printStmt | whileStmt | forStmt 
+             | breakStmt | continueStmt | exploreStmt | returnStmt 
+             | defineStmt | block | exprStmt
+
+varDecl    ::= "var" IDENTIFIER ("=" expression)? ";"
+printStmt  ::= "print" "(" expression ")" ";"
+ifStmt     ::= "if" "(" expression ")" block ("else" block)?
+whileStmt  ::= "while" "(" expression ")" block
+forStmt    ::= "for" "(" IDENTIFIER "in" expression "to" expression ")" block
+defineStmt ::= "define" IDENTIFIER "(" (IDENTIFIER ("," IDENTIFIER)*)?  ")" block
+returnStmt ::= "return" expression? ";"
+exploreStmt::= "explore" "(" IDENTIFIER ")" block
+breakStmt  ::= "break" ";"
+continueStmt ::= "continue" ";"
+exprStmt   ::= expression ";"
+
+expression ::= assignExpr
+assignExpr ::= orExpr ("=" assignExpr)?
+orExpr     ::= andExpr ("||" andExpr)*
+andExpr    ::= equalityExpr ("&&" equalityExpr)*
+equalityExpr ::= relationalExpr (("==" | "!=") relationalExpr)*
+relationalExpr ::= additiveExpr (("<" | "<=" | ">" | ">=") additiveExpr)*
+additiveExpr ::= multiplicativeExpr (("+" | "-") multiplicativeExpr)*
+multiplicativeExpr ::= unaryExpr (("*" | "/" | "%") unaryExpr)*
+unaryExpr  ::= ("!" | "-") unaryExpr | primaryWithSuffixes
+primaryWithSuffixes ::= primary suffix*
+suffix     ::= "." IDENTIFIER 
+             | "->" IDENTIFIER "(" argumentList ")"
+             | "[" expression "]" 
+             | "(" argumentList ")"
+
+primary    ::= NUMERIC_LITERAL | STRING_LITERAL | "true" | "false" | "null"
+             | IDENTIFIER | constructorCall | arrayLiteral | "(" expression ")"
+constructorCall ::= ("SafariZone" | "Team") "(" argumentList ")"
+arrayLiteral ::= "[" (expression ("," expression)*)? "]"
+argumentList ::= (argument ("," argument)*)? ")"
+argument   ::= IDENTIFIER "=" expression | expression
+```
+
+---
+
+### Grammar Ambiguities and Resolutions
+
+#### 1. **Dangling Else** 
+
+```javascript
+if (x > 0)
+    if (y > 0)
+        print("both");
+else  // Binds to inner if
+    print("not both");
+```
+
+**Resolution:** Else binds to nearest if (standard approach).
+
+#### 2. **Property vs Method** 
+
+```javascript
+zone.balls       
+zone->useBall()  
+zone.useBall()   
+zone->balls    
+```
+
+**Resolution:** Parser enforces syntax rules during parsing.
+
+## License
+
+**Educational Use Only**
+
+This project was created as an academic assignment for a programming language course.
+
+- Free for **educational purposes** (learning, teaching, academic research)
+- Free for **personal, non-commercial use**
+
+
+**Copyright © 2025 Christian Joseph Hernia and Nina Claudia Del Rosario**
+
+---
+

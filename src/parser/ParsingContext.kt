@@ -2,15 +2,8 @@ package parser
 
 import lexer.Token
 
-/**
- * Tracks parsing context state during the parsing process.
- * Manages control block depth and explore state to enforce language-specific rules
- * (e.g., 'run' statements only allowed inside control blocks,
- *  'encounter' only allowed/declared within explore blocks).
- */
-class ParsingContext {
+class ParsingContext (private val errorHandler: ParserErrorHandler) {
     private var controlBlockDepth = 0
-    private var exploreBlockDepth = 0
 
     fun enterControlBlock() {
         controlBlockDepth++
@@ -22,35 +15,33 @@ class ParsingContext {
 
     fun isInControlBlock(): Boolean = controlBlockDepth > 0
 
-    // ----- Explore block depth tracking -----
-
-    fun enterExploreBlock() {
-        exploreBlockDepth++
-    }
-
-    fun exitExploreBlock() {
-        exploreBlockDepth--
-    }
-
-    fun isInExploreBlock(): Boolean = exploreBlockDepth > 0
-
-    /**
-     * Validates that a 'run' statement appears in a valid context.
-     * Throws an exception if 'run' is used outside of control blocks.
-     */
-    fun validateRunStatement(token: Token) {
-        if (!isInControlBlock()) {
-            throw ParserError(token, "'run' statement is only allowed inside control blocks")
+    fun validateBreakStatement(token: Token) {
+        if (! isInControlBlock()) {
+            throw errorHandler.error(token, "'break' statement is only allowed inside loops")
         }
     }
 
-    /**
-     * Validates that 'encounter' is used only inside explore blocks.
-     * Throws an exception if used elsewhere.
-     */
-    fun validateEncounterUsage(token: Token) {
-        if (!isInExploreBlock()) {
-            throw ParserError(token, "'encounter' is only available inside explore blocks")
+    fun validateContinueStatement(token: Token) {
+        if (!isInControlBlock()) {
+            throw errorHandler.error(token, "'continue' statement is only allowed inside loops")
+        }
+    }
+
+    fun validateNotReserved(token: Token, keyword: String) {
+        if (token.lexeme == keyword) {
+            throw errorHandler.error(token, "'$keyword' is a reserved keyword and cannot be declared as a variable")
+        }
+    }
+
+    fun validateNotReadOnly(token: Token, keyword: String) {
+        if (token.lexeme == keyword) {
+            throw errorHandler.error(token, "'$keyword' is read-only and cannot be assigned")
+        }
+    }
+
+    fun validateRunStatement(token: Token) {
+        if (!isInControlBlock()) {
+            throw errorHandler.error(token, "'run' statement is only allowed inside control blocks")
         }
     }
 }

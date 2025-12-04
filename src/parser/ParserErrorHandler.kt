@@ -15,7 +15,7 @@ data class ParserError(
  * Manages and tracks parsing errors during the parsing process.
  * Collects errors for batch reporting and provides utilities for error management.
  */
-class ErrorHandler {
+class ParserErrorHandler {
     private val errors = mutableListOf<ParserError>()
 
     /**
@@ -97,13 +97,5 @@ class ErrorHandler {
                 }
             }
         }
-    }
-
-    /**
-     * Clears all recorded errors.
-     * Useful for REPL mode where errors should reset between commands.
-     */
-    fun clearErrors() {
-        errors.clear()
     }
 }

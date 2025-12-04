@@ -1,4 +1,3 @@
-// kotlin
 package evaluator
 
 import lexer.Token
@@ -6,20 +5,63 @@ import parser.*
 
 /**
  * Handles creation of built-in object types (SafariZone, Team).
- * Centralizes constructor logic and argument resolution.
+ * Uses a registry pattern for extensibility and reduced duplication.
  */
-
-
 class SafariZoneObjects(
     private val errorHandler: EvaluatorErrorHandler,
     private val evaluator: Evaluator
 ) {
-    // ...
+
+    // ========== Constructor Registry ==========
+
+    private val constructors: Map<String, ConstructorDefinition> = mapOf(
+        "SafariZone" to ConstructorDefinition(
+            paramNames = listOf(SafariZoneParams.BALLS, SafariZoneParams.TURNS),
+            defaults = SafariZoneParams.DEFAULTS,
+            factory = ::createSafariZone
+        ),
+        "Team" to ConstructorDefinition(
+            paramNames = listOf(TeamParams.TRAINER_NAME, TeamParams.MAX_SIZE),
+            defaults = TeamParams.DEFAULTS,
+            factory = ::createTeam
+        )
+    )
+
+    /**
+     * Attempts to create a built-in object by name.
+     * Returns the created object or null if name is not recognized.
+     */
+    fun tryCreate(
+        name: String,
+        positionalArgs: List<Any?>,
+        namedArgs: List<NamedArg>,
+        token: Token
+    ): Any? {
+        val constructor = constructors[name] ?: return null
+
+        // Evaluate named arguments
+        val evaluatedNamedArgs = namedArgs.map { namedArg ->
+            Pair(namedArg.name, evaluator.evaluate(namedArg.value))
+        }
+
+        // Resolve all arguments
+        val resolvedArgs = resolveArguments(
+            token,
+            constructor.paramNames,
+            positionalArgs,
+            evaluatedNamedArgs,
+            constructor.defaults
+        )
+
+        // Call factory function
+        return constructor.factory(resolvedArgs, token)
+    }
+
+    // ========== Argument Resolution ==========
+
     /**
      * Resolves positional and named arguments into a parameter map.
      * Handles defaults and validates argument count.
-     *
-     * namedArgs: List of Pair(Token, evaluatedValue)
      */
     private fun resolveArguments(
         token: Token,
@@ -30,22 +72,22 @@ class SafariZoneObjects(
     ): Map<String, Any?> {
         val result = mutableMapOf<String, Any?>()
 
-        // Check for too many positional arguments
+        // Validate positional argument count
         if (positionalArgs.size > paramNames.size) {
             throw errorHandler.argumentError(
                 token,
-                "Expected at most ${paramNames.size} arguments, got ${positionalArgs.size}"
+                "Expected at most ${paramNames. size} arguments, got ${positionalArgs.size}"
             )
         }
 
         // Assign positional arguments
-        positionalArgs.forEachIndexed { index, value ->
+        positionalArgs. forEachIndexed { index, value ->
             result[paramNames[index]] = value
         }
 
         // Assign named arguments
         for (namedArg in namedArgs) {
-            val paramName = namedArg.first.lexeme
+            val paramName = namedArg. first.lexeme
 
             if (paramName !in paramNames) {
                 throw errorHandler.argumentError(
@@ -55,7 +97,7 @@ class SafariZoneObjects(
             }
 
             if (paramName in result) {
-                throw errorHandler.argumentError(
+                throw errorHandler. argumentError(
                     namedArg.first,
                     "Parameter '$paramName' already specified"
                 )
@@ -80,101 +122,103 @@ class SafariZoneObjects(
 
         return result
     }
-    fun tryCreate(
-        name: String,
-        positionalArgs: List<Any?>,
-        namedArgs: List<NamedArg>,
-        token: Token
-    ): Any? {
 
-        // Evaluate named argument expressions into (Token, Any?) pairs
-        val evaluatedNamedArgs: List<Pair<Token, Any?>> = namedArgs.map { namedArg ->
-            val evaluatedValue = evaluator.evaluate(namedArg.value, isReplMode = false)
-            Pair(namedArg.name, evaluatedValue)
-        }
-
-
-        // Use evaluatedNamedArgs in your constructor calls
-        return when (name) {
-            "SafariZone" -> createSafariZone(positionalArgs, evaluatedNamedArgs, token)
-            "Team" -> createTeam(positionalArgs, evaluatedNamedArgs, token)
-            else -> null
-        }
-    }
-
-
+    // ========== Constructor Implementations ==========
 
     /**
-     * Creates a SafariZone object with balls and turns parameters.
+     * Creates a SafariZone object.
      * SafariZone(balls: Int = 10, turns: Int = 10)
      */
-    private fun createSafariZone(
-        positionalArgs: List<Any?>,
-        namedArgs: List<Pair<Token, Any?>>,
-        token: Token
-    ): SafariZoneObject {
-        val defaults = mapOf(
-            "balls" to 10,
-            "turns" to 10
-        )
+    private fun createSafariZone(params: Map<String, Any?>, token: Token): SafariZoneObject {
+        val balls = getRequiredParam<Int>(params, SafariZoneParams.BALLS, token)
+        val turns = getRequiredParam<Int>(params, SafariZoneParams.TURNS, token)
 
-        val params = resolveArguments(
-            token,
-            listOf("balls", "turns"),
-            positionalArgs,
-            namedArgs,
-            defaults
-        )
-
-        val balls = params["balls"] as? Int
-            ?: throw errorHandler.typeError(token, "Parameter 'balls' must be Int")
-
-        val turns = params["turns"] as? Int
-            ?: throw errorHandler.typeError(token, "Parameter 'turns' must be Int")
-
-        if (balls < 0) {
-            throw errorHandler.argumentError(token, "balls cannot be negative")
-        }
-
-        if (turns < 0) {
-            throw errorHandler.argumentError(token, "turns cannot be negative")
-        }
+        validateNonNegative(balls, SafariZoneParams.BALLS, token)
+        validateNonNegative(turns, SafariZoneParams.TURNS, token)
 
         return SafariZoneObject(balls, turns)
     }
 
     /**
-     * Creates a Team object with trainerName and maxSize parameters.
+     * Creates a Team object.
      * Team(trainerName: String, maxSize: Int = 6)
      */
-    private fun createTeam(
-        positionalArgs: List<Any?>,
-        namedArgs: List<Pair<Token, Any?>>,
-        token: Token
-    ): TeamObject {
-        val defaults = mapOf<String, Any?>(
-            "maxSize" to 6
-        )
+    private fun createTeam(params: Map<String, Any?>, token: Token): TeamObject {
+        val trainerName = getRequiredParam<String>(params, TeamParams. TRAINER_NAME, token)
+        val maxSize = getRequiredParam<Int>(params, TeamParams.MAX_SIZE, token)
 
-        // parameter names must match defaults: trainerName and maxSize
-        val params = resolveArguments(
-            token,
-            listOf("trainerName", "maxSize"),
-            positionalArgs,
-            namedArgs,
-            defaults
-        )
-
-        val trainerName = params["trainerName"] as? String
-            ?: throw errorHandler.typeError(token, "Parameter 'trainerName' must be String")
-
-        val teamSize = params["maxSize"] as? Int
-            ?: throw errorHandler.typeError(token, "Parameter 'maxSize' must be Int")
-
-        if (teamSize < 1) {
-            throw errorHandler.argumentError(token, "maxSize must be at least 1")
+        if (maxSize < 1) {
+            throw errorHandler. argumentError(token, "${TeamParams.MAX_SIZE} must be at least 1")
         }
 
-        return TeamObject(trainerName, mutableListOf(), teamSize)
+        return TeamObject(trainerName, maxSize)
+    }
+
+    // ========== Helper Methods ==========
+
+    /**
+     * Extracts and validates a required parameter from the parameter map.
+     */
+    private inline fun <reified T> getRequiredParam(
+        params: Map<String, Any?>,
+        name: String,
+        token: Token
+    ): T {
+        val value = params[name]
+        if (value !is T) {
+            val typeName = when (T::class) {
+                Int::class -> "Int"
+                String::class -> "String"
+                Boolean::class -> "Boolean"
+                else -> T::class.simpleName ?: "Unknown"
+            }
+            throw errorHandler.typeError(token, "Parameter '$name' must be $typeName")
+        }
+        return value
+    }
+
+    /**
+     * Validates that an integer parameter is non-negative.
+     */
+    private fun validateNonNegative(value: Int, paramName: String, token: Token) {
+        if (value < 0) {
+            throw errorHandler.argumentError(token, "$paramName cannot be negative")
+        }
+    }
+
+    // ========== Data Classes & Constants ==========
+
+    /**
+     * Represents a constructor definition with parameters, defaults, and factory function.
+     */
+    private data class ConstructorDefinition(
+        val paramNames: List<String>,
+        val defaults: Map<String, Any?>,
+        val factory: (Map<String, Any?>, Token) -> SafariZoneObjectInterface
+    )
+
+    /**
+     * Parameter names and defaults for SafariZone constructor.
+     */
+    private object SafariZoneParams {
+        const val BALLS = "balls"
+        const val TURNS = "turns"
+
+        val DEFAULTS = mapOf(
+            BALLS to 10,
+            TURNS to 10
+        )
+    }
+
+    /**
+     * Parameter names and defaults for Team constructor.
+     */
+    private object TeamParams {
+        const val TRAINER_NAME = "trainerName"
+        const val MAX_SIZE = "maxSize"
+
+        val DEFAULTS = mapOf<String, Any?>(
+            MAX_SIZE to 6
+        )
     }
 }
