@@ -1,4 +1,4 @@
-# Pukimo
+# PUKIMO Safari Zone Edition
 
 ## Creators
 
@@ -1073,4 +1073,5 @@ This project was created as an academic assignment for a programming language co
 **Copyright © 2025 Christian Joseph Hernia and Nina Claudia Del Rosario**
 
 ---
+
 
